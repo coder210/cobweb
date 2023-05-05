@@ -1,0 +1,1 @@
+cobweb.exe ./examples/config.lua

@@ -1,0 +1,272 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|Win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{095E64FE-0BA8-3EBA-BAB8-F467F85AA67F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Platform>Win32</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>E:\github\cobweb\extern;E:\github\cobweb\extern\box2d\include;E:\github\cobweb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>E:\github\cobweb\extern;E:\github\cobweb\extern\box2d\include;E:\github\cobweb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>E:\github\cobweb\extern;E:\github\cobweb\extern\box2d\include;E:\github\cobweb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>E:\github\cobweb\extern;E:\github\cobweb\extern\box2d\include;E:\github\cobweb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\github\cobweb\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule E:/github/cobweb/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-file E:/github/cobweb/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\CMake\share\cmake-3.25\Modules\CMakeCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCXXInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCommonLanguageInclude.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeGenericSystem.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeInitializeConfigs.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeLanguageInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeRCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInitialize.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\WindowsPaths.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCXXCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeRCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">E:\github\cobweb\build\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule E:/github/cobweb/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-file E:/github/cobweb/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\CMake\share\cmake-3.25\Modules\CMakeCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCXXInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCommonLanguageInclude.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeGenericSystem.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeInitializeConfigs.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeLanguageInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeRCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInitialize.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\WindowsPaths.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCXXCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeRCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">E:\github\cobweb\build\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule E:/github/cobweb/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-file E:/github/cobweb/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\CMake\share\cmake-3.25\Modules\CMakeCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCXXInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCommonLanguageInclude.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeGenericSystem.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeInitializeConfigs.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeLanguageInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeRCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInitialize.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\WindowsPaths.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCXXCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeRCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">E:\github\cobweb\build\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule E:/github/cobweb/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-file E:/github/cobweb/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\CMake\share\cmake-3.25\Modules\CMakeCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCXXInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeCommonLanguageInclude.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeGenericSystem.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeInitializeConfigs.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeLanguageInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeRCInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInformation.cmake;D:\CMake\share\cmake-3.25\Modules\CMakeSystemSpecificInitialize.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\CMakeCommonCompilerMacros.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Compiler\MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-C.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC-CXX.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows-MSVC.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\Windows.cmake;D:\CMake\share\cmake-3.25\Modules\Platform\WindowsPaths.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeCXXCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeRCCompiler.cmake;E:\github\cobweb\build\CMakeFiles\3.25.1\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">E:\github\cobweb\build\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\github\cobweb\build\ZERO_CHECK.vcxproj">
+      <Project>{717860C3-7EDD-3B1C-85EE-936C468FA87D}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\box2d\box2d.vcxproj">
+      <Project>{0A1D5754-09EA-34DB-8FEA-43F3164DD12D}</Project>
+      <Name>box2d</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\cjson\cjson.vcxproj">
+      <Project>{511581BF-E08E-3D2F-A121-613372C7EA8A}</Project>
+      <Name>cjson</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cobweb.vcxproj">
+      <Project>{4DDCA89F-BAB0-3D97-B13B-7A8FA9401954}</Project>
+      <Name>cobweb</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\crypt\crypt.vcxproj">
+      <Project>{B0F846D4-A049-3E92-98FF-48205D601AA6}</Project>
+      <Name>crypt</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\gate.vcxproj">
+      <Project>{A1A1EAA3-E928-3897-A783-A81F91DA4F71}</Project>
+      <Name>gate</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\glad\glad.vcxproj">
+      <Project>{40ACB2C0-8C19-35EA-A2FF-9D7413443836}</Project>
+      <Name>glad</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\glfw\glfw.vcxproj">
+      <Project>{1BBA8634-B9C8-36C5-91C7-ED6C76D844DA}</Project>
+      <Name>glfw</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\harbor.vcxproj">
+      <Project>{28E2D7B2-5A7C-3F88-A3E3-122BE8267381}</Project>
+      <Name>harbor</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\imgui\imgui.vcxproj">
+      <Project>{8627C004-7365-3AB4-956C-00E8B311FD51}</Project>
+      <Name>imgui</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\kcp\kcp.vcxproj">
+      <Project>{74C9DEE4-6D13-3B10-9353-20A7073C0432}</Project>
+      <Name>kcp</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\lbox2d.vcxproj">
+      <Project>{BEDE7EE1-F1E3-3F3A-BDAA-A086B9ED5EF9}</Project>
+      <Name>lbox2d</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\lcobweb.vcxproj">
+      <Project>{76A43367-A66E-3273-98FD-60EBDFD0BA31}</Project>
+      <Name>lcobweb</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\lcrypt.vcxproj">
+      <Project>{D77550C7-14A2-3B2C-9722-74F7C93E38F7}</Project>
+      <Name>lcrypt</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\lmysql.vcxproj">
+      <Project>{68773C0A-B5D1-3576-AC02-585E9BEA3DC4}</Project>
+      <Name>lmysql</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\lnetpack.vcxproj">
+      <Project>{0BC932AD-451F-3A91-9599-D301BFA7B865}</Project>
+      <Name>lnetpack</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\logger.vcxproj">
+      <Project>{F2DCAD1B-602C-3BD9-BD00-BDC9C1964353}</Project>
+      <Name>logger</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\ltcp.vcxproj">
+      <Project>{C0764285-6E15-3771-8875-BDEBB98A24B7}</Project>
+      <Name>ltcp</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\lua\lua.vcxproj">
+      <Project>{470BCA0D-1F0A-372C-87F2-1BC8DAF19768}</Project>
+      <Name>lua</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\luax.vcxproj">
+      <Project>{2EEBFA42-478D-3DE7-9E90-B50A4D11915A}</Project>
+      <Name>luax</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\luaclib\ludp.vcxproj">
+      <Project>{76D12A30-0BDB-372B-A8CF-33575995C03D}</Project>
+      <Name>ludp</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\platform\platform.vcxproj">
+      <Project>{7D4DD698-AFD6-3118-A7C8-3420B4DD7650}</Project>
+      <Name>platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\sajson\sajson.vcxproj">
+      <Project>{4E8A61A9-0990-3E7E-94E3-3CD1A96C27D3}</Project>
+      <Name>sajson</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\testbed\testbed.vcxproj">
+      <Project>{35E1A88B-528F-35D8-ABDF-DF648096D2A5}</Project>
+      <Name>testbed</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

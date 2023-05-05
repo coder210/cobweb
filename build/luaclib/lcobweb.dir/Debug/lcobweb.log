@@ -1,0 +1,17 @@
+﻿  lcobweb.cpp
+E:\github\cobweb\luaclib\lcobweb.cpp(456,27): warning C4244: “=”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(581,26): warning C4244: “=”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(751,3): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+E:\github\cobweb\luaclib\lcobweb.cpp(793,11): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(799,30): warning C4244: “=”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(820,12): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(850,11): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(851,14): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(871,12): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(942,9): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(963,9): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(993,21): warning C4244: “参数”: 从“lua_Number”转换到“lua_Integer”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(1000,9): warning C4244: “初始化”: 从“lua_Integer”转换到“int”，可能丢失数据
+E:\github\cobweb\luaclib\lcobweb.cpp(1002,12): warning C4244: “初始化”: 从“lua_Integer”转换到“size_t”，可能丢失数据
+    正在创建库 E:/github/cobweb/build/luaclib/Debug/lcobweb.lib 和对象 E:/github/cobweb/build/luaclib/Debug/lcobweb.exp
+  lcobweb.vcxproj -> E:\github\cobweb\build\luaclib\Debug\lcobweb.dll

@@ -1,0 +1,10 @@
+^E:\GITHUB\COBWEB\BUILD\CMAKEFILES\02D6DEAD0D460C0EE8C395258D90C167\GENERATE.STAMP.RULE
+setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/github/cobweb/build/cobweb.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

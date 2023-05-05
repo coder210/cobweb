@@ -1,0 +1,18 @@
+﻿  Building Custom Rule E:/github/cobweb/testbed/CMakeLists.txt
+  draw.cpp
+  foo.cpp
+  imgui_impl_glfw.cpp
+  imgui_impl_opengl3.cpp
+  main.cpp
+  settings.cpp
+  test.cpp
+  test1.cpp
+  test2.cpp
+E:\github\cobweb\testbed\test2.cpp(22,24): warning C4018: “<”: 有符号/无符号不匹配
+E:\github\cobweb\testbed\test2.cpp(40,30): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+E:\github\cobweb\testbed\test2.cpp(40,23): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+  test3.cpp
+E:\github\cobweb\testbed\test3.cpp(44,49): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+E:\github\cobweb\testbed\test3.cpp(44,32): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+  正在生成代码...
+  testbed.vcxproj -> E:\github\cobweb\build\testbed\Debug\testbed.exe

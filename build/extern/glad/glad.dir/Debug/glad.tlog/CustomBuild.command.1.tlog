@@ -1,0 +1,10 @@
+^E:\GITHUB\COBWEB\EXTERN\GLAD\CMAKELISTS.TXT
+setlocal
+D:\CMake\bin\cmake.exe -SE:/github/cobweb -BE:/github/cobweb/build --check-stamp-file E:/github/cobweb/build/extern/glad/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

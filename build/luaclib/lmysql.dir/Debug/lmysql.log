@@ -1,0 +1,4 @@
+﻿  lmysql.cpp
+E:\github\cobweb\luaclib\lmysql.cpp(28,20): warning C4244: “初始化”: 从“lua_Integer”转换到“unsigned int”，可能丢失数据
+E:\github\cobweb\luaclib\lmysql.cpp(75,6): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  lmysql.vcxproj -> E:\github\cobweb\build\luaclib\Debug\lmysql.dll

@@ -1,0 +1,39 @@
+﻿  Building Custom Rule E:/github/cobweb/extern/lua/CMakeLists.txt
+  lapi.c
+  lauxlib.c
+  lbaselib.c
+  lbitlib.c
+  lcode.c
+  lcorolib.c
+  lctype.c
+  ldblib.c
+  ldebug.c
+  ldo.c
+  ldump.c
+  lfunc.c
+  lgc.c
+  linit.c
+  liolib.c
+  llex.c
+  lmathlib.c
+  lmem.c
+  loadlib.c
+  lobject.c
+  正在生成代码...
+  正在编译...
+  lopcodes.c
+  loslib.c
+  lparser.c
+  lstate.c
+  lstring.c
+  lstrlib.c
+  ltable.c
+  ltablib.c
+  ltm.c
+  lundump.c
+  lutf8lib.c
+  lvm.c
+  lzio.c
+  正在生成代码...
+    正在创建库 E:/github/cobweb/build/extern/lua/Debug/lua.lib 和对象 E:/github/cobweb/build/extern/lua/Debug/lua.exp
+  lua.vcxproj -> E:\github\cobweb\build\extern\lua\Debug\lua.dll
