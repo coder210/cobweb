@@ -1,12 +1,6 @@
 ﻿  Building Custom Rule E:/github/cobweb/extern/platform/CMakeLists.txt
   platform_linux.cpp
   platform_std.cpp
-E:\github\cobweb\extern\platform\platform_std.cpp(155,25): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
-E:\github\cobweb\extern\platform\platform_std.cpp(244,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-E:\github\cobweb\extern\platform\platform_std.cpp(310,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-E:\github\cobweb\extern\platform\platform_std.cpp(378,32): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-E:\github\cobweb\extern\platform\platform_std.cpp(444,2): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-E:\github\cobweb\extern\platform\platform_std.cpp(679,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   platform_win.cpp
   正在生成代码...
   platform.vcxproj -> E:\github\cobweb\build\extern\platform\Debug\platform.lib

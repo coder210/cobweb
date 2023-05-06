@@ -27,8 +27,8 @@ static struct socket_server_t* S = NULL;
 
 /*
 * address: 地址
-* afterend: 后端方式kcp=1 tcp=2
-* proto_parse: 协议解析方式default=0 text=1 binrary=2
+* afterend: kcp=1 tcp=2
+* proto_parse: default=0 text=1 binrary=2
 */
 void
 cobweb_sserver_init(char* address, int afterend, int proto_parse){

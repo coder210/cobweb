@@ -73,11 +73,11 @@ _try_open(const char* name) {
 			strncpy(tmp + i + name_size, path + i + 1, len - i - 1);
 		}
 		else {
-			ccp_error("Invalid C service path");
+			platform_error("Invalid C service path");
 			break;
 		}
-		if (ccp_file_exists(tmp)) {
-			dl = ccp_dlopen(tmp);
+		if (platform_file_exists(tmp)) {
+			dl = platform_dlopen(tmp);
 		}
 	
 		path = l;
@@ -87,8 +87,8 @@ _try_open(const char* name) {
 
 	if (dl == NULL) {
 		char msg[512] = { 0 };
-		ccp_dlerror(msg);
-		ccp_error("try open %s failed : %s", name, msg);
+		platform_dlerror(msg);
+		platform_error("try open %s failed : %s", name, msg);
 	}
 
 	return dl;
@@ -101,13 +101,13 @@ _open_sym(struct module_t* mod) {
 	if (tmp != NULL) {
 		memcpy(tmp, mod->name, name_size);
 		strcpy(tmp + name_size, "_create");
-		mod->create = (cobweb_dl_create)ccp_dlsym(mod->module, tmp);
+		mod->create = (cobweb_dl_create)platform_dlsym(mod->module, tmp);
 		strcpy(tmp + name_size, "_init");
-		mod->init = (cobweb_dl_init)ccp_dlsym(mod->module, tmp);
+		mod->init = (cobweb_dl_init)platform_dlsym(mod->module, tmp);
 		strcpy(tmp + name_size, "_release");
-		mod->release = (cobweb_dl_release)ccp_dlsym(mod->module, tmp);
+		mod->release = (cobweb_dl_release)platform_dlsym(mod->module, tmp);
 		strcpy(tmp + name_size, "_signal");
-		mod->signal = (cobweb_dl_signal)ccp_dlsym(mod->module, tmp);
+		mod->signal = (cobweb_dl_signal)platform_dlsym(mod->module, tmp);
 		cobweb_free (tmp);
 	}
 	return mod->init == NULL;
@@ -132,7 +132,7 @@ cobweb_module_query(const char* name) {
 		return result;
 	}
 
-	ccp_mutex_lock(M->mutex);
+	platform_mutex_lock(M->mutex);
 
 	result = _query(name); // double check
 
@@ -148,21 +148,21 @@ cobweb_module_query(const char* name) {
 			}
 			else {
 				// ¼ÓÔØº¯ÊýÊ§°ÜÊÍ·Å
-				ccp_dlclose(M->ms[index].module);
+				platform_dlclose(M->ms[index].module);
 				memset(M->ms[index].name, 0, MAX_MODULE_NAME);
 				M->ms[index].module = NULL;
 			}
 		}
 	}
 
-	ccp_mutex_unlock(M->mutex);
+	platform_mutex_unlock(M->mutex);
 
 	return result;
 }
 
 void
 cobweb_module_insert(struct module_t* mod) {
-	ccp_mutex_lock(M->mutex);
+	platform_mutex_lock(M->mutex);
 
 	struct module_t* m = _query(mod->name);
 	assert(m == NULL && M->count < MAX_MODULE_TYPE);
@@ -170,7 +170,7 @@ cobweb_module_insert(struct module_t* mod) {
 	M->ms[index] = *mod;
 	++M->count;
 
-	ccp_mutex_unlock(M->mutex);
+	platform_mutex_unlock(M->mutex);
 
 }
 
@@ -179,7 +179,7 @@ cobweb_module_init(const char* path) {
 	M = (struct modules_t*)cobweb_malloc(sizeof(struct modules_t));
 	if (M != NULL) {
 		memset(M, 0, sizeof(struct modules_t));
-		M->mutex = ccp_mutex_create();
+		M->mutex = platform_mutex_create();
 		M->path = path;
 	}
 }
@@ -187,7 +187,7 @@ cobweb_module_init(const char* path) {
 void
 cobweb_module_release(void) {
 	if (M != NULL) {
-		ccp_mutex_release(M->mutex);
+		platform_mutex_release(M->mutex);
 		cobweb_free (M);
 		M = NULL;
 	}

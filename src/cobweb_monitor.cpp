@@ -62,8 +62,8 @@ cobweb_monitor_init(int count) {
 				M->ms[i] = _create_monitor();
 			}
 		}
-		M->mutex = ccp_mutex_create();
-		M->event = ccp_event_create("MONITOR", M->mutex);
+		M->mutex = platform_mutex_create();
+		M->event = platform_event_create("MONITOR", M->mutex);
 	}
 }
 
@@ -75,8 +75,8 @@ cobweb_monitor_release(void) {
 			_destory_monitor(M->ms[i]);
 		}
 
-		ccp_mutex_release(M->mutex);
-		ccp_event_release(M->event);
+		platform_mutex_release(M->mutex);
+		platform_event_release(M->event);
 		cobweb_free (M->ms);
 		cobweb_free (M);
 	}
@@ -88,9 +88,9 @@ cobweb_monitor_trigger(struct monitor_t* sm, uint32_t source, uint32_t destinati
 	sm->source = source;
 	sm->destination = destination;
 
-	ccp_mutex_lock(M->mutex);
+	platform_mutex_lock(M->mutex);
 	sm->version++;
-	ccp_mutex_unlock(M->mutex);
+	platform_mutex_unlock(M->mutex);
 }
 
 // 检查监控，有一个线程专门做这个事情
@@ -132,19 +132,19 @@ cobweb_query_monitor(int index) {
 
 void
 cobweb_monitor_wait(void) {
-	ccp_mutex_lock(M->mutex);
+	platform_mutex_lock(M->mutex);
 	++M->sleep;
 	if (!M->quit) {
-		ccp_event_wait(M->event);
+		platform_event_wait(M->event);
 	}
 	--M->sleep;
-	ccp_mutex_unlock(M->mutex);
+	platform_mutex_unlock(M->mutex);
 }
 
 void
 cobweb_monitor_wakeup(int busy) {
 	if (M->sleep >= busy) {
 		// signal sleep worker, "spurious wakeup" is harmless
-		ccp_event_signal(M->event);
+		platform_event_signal(M->event);
 	}
 }

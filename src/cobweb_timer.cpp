@@ -40,7 +40,7 @@ cobweb_timer_init(void) {
 	if (T != NULL) {
 		memset(T, 0, sizeof(struct timer_t));
 		T->cur_index = 0;
-		T->fd = ccp_timefd_create();
+		T->fd = platform_timefd_create();
 	}
 }
 
@@ -123,7 +123,7 @@ cobweb_del_wheel(int session) {
 
 int
 cobweb_timer_tick(bool(*tick)(uint32_t handle, int session, void* data, size_t sz, void* arg), void* arg) {
-	int timeout = ccp_timer_timeout(T->fd);
+	int timeout = platform_timer_timeout(T->fd);
 	while (timeout-- > 0) {
 		T->cur_index++;
 		T->cur_index %= TIMER_WHEEL_NUM;
@@ -172,7 +172,7 @@ cobweb_timer_release(void) {
 			}
 		}
 
-		ccp_timerfd_close(T->fd);
+		platform_timerfd_close(T->fd);
 		cobweb_free (T);
 		T = NULL;
 	}

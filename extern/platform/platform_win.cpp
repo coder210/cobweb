@@ -17,33 +17,33 @@ History:
 #ifdef _COBWEB_WIN32
 
 int
-ccp_daemon_init(const char* pidfile) {
+platform_daemon_init(const char* pidfile) {
 	return 0;
 }
 
 int
-ccp_daemon_exit(const char* pidfile) {
+platform_daemon_exit(const char* pidfile) {
 	return 0;
 }
 
 void
-ccp_exception_debug(int signo) {
+platform_exception_debug(int signo) {
 
 }
 
 int
-ccp_timefd_create(void) {
+platform_timefd_create(void) {
 	return 0;
 }
 
 int
-ccp_timer_timeout(int timerfd) {
-	ccp_msleep(CC_TIMER_INTERVAL);
+platform_timer_timeout(int timerfd) {
+	platform_msleep(CC_TIMER_INTERVAL);
 	return 1;
 }
 
 void
-ccp_timerfd_close(int timerfd) {
+platform_timerfd_close(int timerfd) {
 }
 
 

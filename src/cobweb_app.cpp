@@ -67,7 +67,7 @@ _init_env(lua_State* L) {
 	while (lua_next(L, -2) != 0) {
 		int keyt = lua_type(L, -2);
 		if (keyt != LUA_TSTRING) {
-			ccp_log("Invalid config table");
+			platform_log("Invalid config table");
 			return;
 		}
 		const char* key = lua_tostring(L, -2);
@@ -78,7 +78,7 @@ _init_env(lua_State* L) {
 		else {
 			const char* value = lua_tostring(L, -1);
 			if (value == NULL) {
-				ccp_error("Invalid config table key = %s", key);
+				platform_error("Invalid config table key = %s", key);
 				return;
 			}
 			cobweb_setenv(key, value);
@@ -90,22 +90,18 @@ _init_env(lua_State* L) {
 
 int
 cobweb_run(const char* config_file) {
-	/* env init */
 	cobweb_env_init();
-
-	/* config */
 	struct config_t config;
 
 	struct lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	int err = luaL_dofile(L, config_file);
 	if (err) {
-		ccp_error("%s", lua_tostring(L, -1));
+		platform_error("%s", lua_tostring(L, -1));
 		lua_close(L);
 		return 1;
 	}
 
-	/* init env */
 	_init_env(L);
 
 	config.thread = _optint("thread", 8);
@@ -122,27 +118,27 @@ cobweb_run(const char* config_file) {
 	lua_close(L);
 
 	char tmp[COBWEB_MAX_PATH] = { 0 };
-	cobweb_setenv("absolut_path", ccp_root_dir(tmp, COBWEB_MAX_PATH));
+	cobweb_setenv("absolut_path", platform_root_dir(tmp, COBWEB_MAX_PATH));
 
 	/* init daemon */
 	if (config.daemon) {
-		if (ccp_daemon_init(config.daemon)) {
+		if (platform_daemon_init(config.daemon)) {
 			return 1;
 		}
 	}
 
 	/* init network */
-	ccp_network_init();
+	platform_network_init();
 
 	/* start */
 	cobweb_start(&config);
 
 	/* release network */
-	ccp_network_release();
+	platform_network_release();
 
 	/* exit daemon */
 	if (config.daemon) {
-		ccp_daemon_exit(config.daemon);
+		platform_daemon_exit(config.daemon);
 	}
 
 	return 0;

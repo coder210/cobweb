@@ -43,10 +43,10 @@ static struct handle_storage_t* H = NULL;
 uint32_t
 cobweb_handle_register(struct context_t* ctx) {
 	uint32_t handle = 0;
-	ccp_mutex_lock(H->mutex);
+	platform_mutex_lock(H->mutex);
 	handle = H->handle_index++;
 	H->slot[handle] = ctx;
-	ccp_mutex_unlock(H->mutex);
+	platform_mutex_unlock(H->mutex);
 	return handle;
 }
 
@@ -57,11 +57,11 @@ cobweb_handle_retire(uint32_t handle) {
 		return 1;
 	}
 
-	ccp_mutex_lock(H->mutex);
+	platform_mutex_lock(H->mutex);
 	H->slot[handle] = NULL;
 	H->name[handle].handle = 0;
 	memset(H->name[handle].name, 0, MAX_NAME_SIZE);
-	ccp_mutex_unlock(H->mutex);
+	platform_mutex_unlock(H->mutex);
 
 	return 0;
 }
@@ -90,7 +90,7 @@ uint32_t
 cobweb_handle_findname(const char* name) {
 	uint32_t handle = 0;
 
-	ccp_mutex_lock(H->mutex);
+	platform_mutex_lock(H->mutex);
 
 	int n = (int)H->handle_index;
 	for (int i = 0; i < n; i++) {
@@ -102,7 +102,7 @@ cobweb_handle_findname(const char* name) {
 		}
 	}
 
-	ccp_mutex_unlock(H->mutex);
+	platform_mutex_unlock(H->mutex);
 
 	return handle;
 }
@@ -117,9 +117,9 @@ _insert_name(struct handle_storage_t* h, const char* name, uint32_t handle) {
 
 const char*
 cobweb_handle_namehandle(uint32_t handle, const char* name) {
-	ccp_mutex_lock(H->mutex);
+	platform_mutex_lock(H->mutex);
 	const char* ret = _insert_name(H, name, handle);
-	ccp_mutex_unlock(H->mutex);
+	platform_mutex_unlock(H->mutex);
 	return ret;
 }
 
@@ -131,7 +131,7 @@ cobweb_handle_init(int harbor) {
 	H->slot = (struct context_t**)cobweb_malloc(H->slot_size * sizeof(struct context_t*));
 	assert(H->slot != NULL);
 	memset(H->slot, 0, H->slot_size * sizeof(struct context_t*));
-	H->mutex = ccp_mutex_create();
+	H->mutex = platform_mutex_create();
 	H->harbor = (uint32_t)(harbor & 0xff) << HANDLE_REMOTE_SHIFT;
 	/* zero is logger handle */
 	H->handle_index = 1;
@@ -144,7 +144,7 @@ cobweb_handle_release() {
 	cobweb_handle_retireall();
 	cobweb_free (H->slot);
 	cobweb_free (H->name);
-	ccp_mutex_release(H->mutex);
+	platform_mutex_release(H->mutex);
 	cobweb_free (H);
 	H = NULL;
 }

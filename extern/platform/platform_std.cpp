@@ -107,7 +107,7 @@ struct event_t {
 
 
 bool
-ccp_network_init(void) {
+platform_network_init(void) {
 #ifdef _COBWEB_WIN32
 	WSADATA wsa_data;
 	int ret = WSAStartup(0x0201, &wsa_data);
@@ -118,7 +118,7 @@ ccp_network_init(void) {
 }
 
 bool
-ccp_network_release(void) {
+platform_network_release(void) {
 #ifdef _COBWEB_WIN32
 	int ret = WSACleanup();
 	return ret != 0 ? true : false;
@@ -128,7 +128,7 @@ ccp_network_release(void) {
 }
 
 int
-ccp_anyaddr(void) {
+platform_anyaddr(void) {
 #ifdef _COBWEB_WIN32
 	int anyaddr = htonl(INADDR_ANY);
 	return anyaddr;
@@ -139,7 +139,7 @@ ccp_anyaddr(void) {
 }
 
 bool
-ccp_socket_close(int sockfd) {
+platform_socket_close(int sockfd) {
 #ifdef _COBWEB_WIN32
 	return closesocket(sockfd) == 0 ? true : false;
 #elif _COBWEB_LINUX
@@ -148,7 +148,7 @@ ccp_socket_close(int sockfd) {
 }
 
 struct sockaddr_in
-	ccp_sockaddr(const char* ip, int port) {
+	platform_sockaddr(const char* ip, int port) {
 #ifdef _COBWEB_WIN32
 	struct sockaddr_in peer;
 	peer.sin_family = AF_INET;
@@ -165,7 +165,7 @@ struct sockaddr_in
 }
 
 bool
-ccp_socket_nonblock(int sockfd) {
+platform_socket_nonblock(int sockfd) {
 #ifdef _COBWEB_WIN32
 	unsigned long ul = 1;
 	int ret = ioctlsocket(sockfd, FIONBIO, (unsigned long*)&ul);
@@ -179,22 +179,22 @@ ccp_socket_nonblock(int sockfd) {
 }
 
 bool
-ccp_socket_bind(int sockfd, const char* ip, int port) {
+platform_socket_bind(int sockfd, const char* ip, int port) {
 #ifdef _COBWEB_WIN32
-	struct sockaddr_in peer = ccp_sockaddr(ip, port);
+	struct sockaddr_in peer = platform_sockaddr(ip, port);
 	int ret = bind(sockfd, (struct sockaddr*)&peer, sizeof(peer));
 	return ret == 0 ? true : false;
 #elif _COBWEB_LINUX
-	struct sockaddr_in peer = ccp_sockaddr(ip, port);
+	struct sockaddr_in peer = platform_sockaddr(ip, port);
 	int ret = bind(sockfd, (struct sockaddr*)&peer, sizeof(peer));
 	return ret == 0 ? true : false;
 #endif
 }
 
 bool
-ccp_tcp_connect(int sockfd, const char* ip, int port) {
+platform_tcp_connect(int sockfd, const char* ip, int port) {
 #ifdef _COBWEB_WIN32
-	struct sockaddr_in peer = ccp_sockaddr(ip, port);
+	struct sockaddr_in peer = platform_sockaddr(ip, port);
 	if (connect(sockfd, (struct sockaddr*)&peer, sizeof(peer)) == 0) {
 		return true;
 	}
@@ -202,7 +202,7 @@ ccp_tcp_connect(int sockfd, const char* ip, int port) {
 		return false;
 	}
 #elif _COBWEB_LINUX
-	struct sockaddr_in peer = ccp_sockaddr(ip, port);
+	struct sockaddr_in peer = platform_sockaddr(ip, port);
 	if (connect(sockfd, (struct sockaddr*)&peer, sizeof(peer)) == 0) {
 		return true;
 	}
@@ -213,7 +213,7 @@ ccp_tcp_connect(int sockfd, const char* ip, int port) {
 }
 
 int
-ccp_tcp_create(void) {
+platform_tcp_create(void) {
 #ifdef _COBWEB_WIN32
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	return sockfd;
@@ -224,7 +224,7 @@ ccp_tcp_create(void) {
 }
 
 bool
-ccp_tcp_listen(int sockfd) {
+platform_tcp_listen(int sockfd) {
 #ifdef _COBWEB_WIN32
 	return listen(sockfd, SOMAXCONN) == 0 ? true : false;
 #elif _COBWEB_LINUX
@@ -233,7 +233,7 @@ ccp_tcp_listen(int sockfd) {
 }
 
 struct sockaddr_t
-	ccp_tcp_accept(int sockfd) {
+	platform_tcp_accept(int sockfd) {
 	struct sockaddr_t sockaddr;
 	memset(&sockaddr, 0, sizeof(struct sockaddr_t));
 #ifdef _COBWEB_WIN32
@@ -255,7 +255,7 @@ struct sockaddr_t
 }
 
 int
-ccp_tcp_send(int sockfd, const char* buf, int len) {
+platform_tcp_send(int sockfd, const char* buf, int len) {
 #ifdef _COBWEB_WIN32
 	int n = send(sockfd, buf, len, 0);
 	return n;
@@ -266,7 +266,7 @@ ccp_tcp_send(int sockfd, const char* buf, int len) {
 }
 
 int
-ccp_tcp_recv(int sockfd, char* buffer) {
+platform_tcp_recv(int sockfd, char* buffer) {
 #ifdef _COBWEB_WIN32
 	char buf[CC_MAX_BUFFER] = { 0 };
 	memset(buf, 0, CC_MAX_BUFFER);
@@ -287,7 +287,7 @@ ccp_tcp_recv(int sockfd, char* buffer) {
 }
 
 int
-ccp_udp_create(void) {
+platform_udp_create(void) {
 #ifdef _COBWEB_WIN32
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	return sockfd;
@@ -298,7 +298,7 @@ ccp_udp_create(void) {
 }
 
 int
-ccp_udp_recv(int sockfd, char* out_buffer, char* ip, int* port) {
+platform_udp_recv(int sockfd, char* out_buffer, char* ip, int* port) {
 #ifdef _COBWEB_WIN32
 	struct sockaddr_in clientaddr;
 	int len = sizeof(clientaddr);
@@ -325,21 +325,21 @@ ccp_udp_recv(int sockfd, char* out_buffer, char* ip, int* port) {
 }
 
 int
-ccp_udp_send(int sockfd, const char* buffer, int len,
+platform_udp_send(int sockfd, const char* buffer, int len,
 	const char* ip, int port) {
 #ifdef _COBWEB_WIN32
-	struct sockaddr_in addr = ccp_sockaddr(ip, port);
+	struct sockaddr_in addr = platform_sockaddr(ip, port);
 	int n = sendto(sockfd, buffer, len, 0, (struct sockaddr*)&addr, sizeof(addr));
 	return n;
 #elif _COBWEB_LINUX
-	struct sockaddr_in addr = ccp_sockaddr(ip, port);
+	struct sockaddr_in addr = platform_sockaddr(ip, port);
 	int n = sendto(sockfd, buffer, len, 0, (struct sockaddr*)&addr, sizeof(addr));
 	return n;
 #endif
 }
 
 void
-ccp_msleep(int msec) {
+platform_msleep(int msec) {
 #ifdef _COBWEB_WIN32
 	Sleep(msec);
 #elif _COBWEB_LINUX
@@ -348,7 +348,7 @@ ccp_msleep(int msec) {
 }
 
 bool
-ccp_file_exists(const char* file) {
+platform_file_exists(const char* file) {
 #ifdef _COBWEB_WIN32
 	WIN32_FIND_DATAA wfd;
 	HANDLE hFind = FindFirstFileA(file, &wfd);
@@ -359,7 +359,7 @@ ccp_file_exists(const char* file) {
 }
 
 char*
-ccp_root_dir(char* path, int len) {
+platform_root_dir(char* path, int len) {
 #ifdef _COBWEB_WIN32
 	memset(path, 0, len);
 	GetCurrentDirectoryA((int)len, path);
@@ -371,7 +371,7 @@ ccp_root_dir(char* path, int len) {
 }
 
 struct datetime_t
-ccp_datetime(const char* format) {
+platform_datetime(const char* format) {
 	struct datetime_t datetime;
 	time_t rawtime;
 	time(&rawtime);
@@ -381,7 +381,7 @@ ccp_datetime(const char* format) {
 }
 
 void
-ccp_timeofday(long* sec, long* usec) {
+platform_timeofday(long* sec, long* usec) {
 #ifdef _COBWEB_WIN32
 	struct tm tm;
 	SYSTEMTIME wtm;
@@ -408,7 +408,7 @@ ccp_timeofday(long* sec, long* usec) {
 }
 
 void*
-ccp_dlopen(const char* file) {
+platform_dlopen(const char* file) {
 #ifdef _COBWEB_WIN32
 	void* dl = (void*)LoadLibraryA(file);
 #elif _COBWEB_LINUX
@@ -418,7 +418,7 @@ ccp_dlopen(const char* file) {
 }
 
 void*
-ccp_dlsym(void* dl, const char* name) {
+platform_dlsym(void* dl, const char* name) {
 #ifdef _COBWEB_WIN32
 	void* address = (void*)GetProcAddress((HMODULE)dl, name);
 #elif _COBWEB_LINUX
@@ -428,7 +428,7 @@ ccp_dlsym(void* dl, const char* name) {
 }
 
 int
-ccp_dlclose(void* dl) {
+platform_dlclose(void* dl) {
 #ifdef _COBWEB_WIN32
 	bool ret = FreeLibrary((HMODULE)dl);
 #elif _COBWEB_LINUX
@@ -438,7 +438,7 @@ ccp_dlclose(void* dl) {
 }
 
 void
-ccp_dlerror(char* msg) {
+platform_dlerror(char* msg) {
 #ifdef _COBWEB_WIN32
 	int errorno = GetLastError();
 	sprintf(msg, "error number is %d", errorno);
@@ -458,22 +458,22 @@ _color_print(enum FG_COLOR_E color, const char* str) {
 }
 
 void
-ccp_green_print(const char* str) {
+platform_green_print(const char* str) {
 	_color_print(FG_GREEN, str);
 }
 
 void
-ccp_blue_print(const char* str) {
+platform_blue_print(const char* str) {
 	_color_print(FG_BLUE, str);
 }
 
 void
-ccp_red_print(const char* str) {
+platform_red_print(const char* str) {
 	_color_print(FG_RED, str);
 }
 
 int
-ccp_log(const char* format, ...) {
+platform_log(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	char tmp[CC_MESSAGE_SIZE];
@@ -505,13 +505,13 @@ ccp_log(const char* format, ...) {
 			}
 		}
 	}
-	ccp_green_print(data);
+	platform_green_print(data);
 	free(data);
 	return len;
 }
 
 int
-ccp_debug(const char* format, ...) {
+platform_debug(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	char tmp[CC_MESSAGE_SIZE];
@@ -543,13 +543,13 @@ ccp_debug(const char* format, ...) {
 			}
 		}
 	}
-	ccp_blue_print(data);
+	platform_blue_print(data);
 	free(data);
 	return len;
 }
 
 int
-ccp_error(const char* format, ...) {
+platform_error(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	char tmp[CC_MESSAGE_SIZE];
@@ -581,13 +581,13 @@ ccp_error(const char* format, ...) {
 			}
 		}
 	}
-	ccp_red_print(data);
+	platform_red_print(data);
 	free(data);
 	return len;
 }
 
 struct thread_t
-ccp_thread_create(void* (*start_rtn)(void*), void* arg) {
+platform_thread_create(void* (*start_rtn)(void*), void* arg) {
 	struct thread_t th = { 0 };
 #ifdef _COBWEB_WIN32
 	th.handle = _beginthreadex(NULL, 0, (_beginthreadex_proc_type)start_rtn, arg, 0, (unsigned int *)(& th.tid));
@@ -599,7 +599,7 @@ ccp_thread_create(void* (*start_rtn)(void*), void* arg) {
 }
 
 bool
-ccp_thread_wait(struct thread_t* pth) {
+platform_thread_wait(struct thread_t* pth) {
 #ifdef _COBWEB_WIN32
 	DWORD ret = WaitForSingleObject((HANDLE)pth->handle, -1);
 	return ret != WAIT_OBJECT_0 ? true : false;
@@ -611,7 +611,7 @@ ccp_thread_wait(struct thread_t* pth) {
 }
 
 bool
-ccp_thread_release(struct thread_t* pth) {
+platform_thread_release(struct thread_t* pth) {
 #ifdef _COBWEB_WIN32
 	return CloseHandle((HANDLE)pth->handle) ? true : false;
 #elif _COBWEB_LINUX
@@ -620,7 +620,7 @@ ccp_thread_release(struct thread_t* pth) {
 }
 
 int
-ccp_gettid(void) {
+platform_gettid(void) {
 #ifdef _COBWEB_WIN32
 	return GetCurrentThreadId();
 #elif _COBWEB_LINUX
@@ -629,7 +629,7 @@ ccp_gettid(void) {
 }
 
 struct mutex_t*
-	ccp_mutex_create(void) {
+	platform_mutex_create(void) {
 	struct mutex_t* mutex = (struct mutex_t*)malloc(sizeof(struct mutex_t));
 	assert(mutex != NULL);
 #ifdef _COBWEB_WIN32
@@ -641,7 +641,7 @@ struct mutex_t*
 }
 
 void
-ccp_mutex_lock(struct mutex_t* mutex) {
+platform_mutex_lock(struct mutex_t* mutex) {
 #ifdef _COBWEB_WIN32
 	EnterCriticalSection(&mutex->m);
 #elif _COBWEB_LINUX
@@ -650,7 +650,7 @@ ccp_mutex_lock(struct mutex_t* mutex) {
 }
 
 void
-ccp_mutex_unlock(struct mutex_t* mutex) {
+platform_mutex_unlock(struct mutex_t* mutex) {
 #ifdef _COBWEB_WIN32
 	LeaveCriticalSection(&mutex->m);
 #elif _COBWEB_LINUX
@@ -659,7 +659,7 @@ ccp_mutex_unlock(struct mutex_t* mutex) {
 }
 
 void
-ccp_mutex_release(struct mutex_t* mutex) {
+platform_mutex_release(struct mutex_t* mutex) {
 	if (mutex != NULL) {
 #ifdef _COBWEB_WIN32
 		DeleteCriticalSection(&mutex->m);
@@ -672,7 +672,7 @@ ccp_mutex_release(struct mutex_t* mutex) {
 
 /* create event */
 struct event_t*
-ccp_event_create(const char* name, struct mutex_t* mutex) {
+platform_event_create(const char* name, struct mutex_t* mutex) {
 	struct event_t* event = (struct event_t*)malloc(sizeof(struct event_t));
 	assert(event != NULL);
 #ifdef _COBWEB_WIN32
@@ -688,7 +688,7 @@ ccp_event_create(const char* name, struct mutex_t* mutex) {
 
 /* wait event */
 void
-ccp_event_wait(struct event_t* event) {
+platform_event_wait(struct event_t* event) {
 #ifdef _COBWEB_WIN32
 	WaitForSingleObject(event->handle, -1);
 #elif _COBWEB_LINUX
@@ -698,7 +698,7 @@ ccp_event_wait(struct event_t* event) {
 
 /* signal event */
 void
-ccp_event_signal(struct event_t* event) {
+platform_event_signal(struct event_t* event) {
 #ifdef _COBWEB_WIN32
 	SetEvent(event->handle);
 #elif _COBWEB_LINUX
@@ -708,7 +708,7 @@ ccp_event_signal(struct event_t* event) {
 
 /* release event */
 void
-ccp_event_release(struct event_t* event) {
+platform_event_release(struct event_t* event) {
 	if (event != NULL) {
 #ifdef _COBWEB_WIN32
 		CloseHandle(event->handle);

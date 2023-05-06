@@ -453,7 +453,7 @@ unpack_table(lua_State* L, struct read_block* rb, int array_size) {
 		if ((type & 7) != TYPE_NUMBER || cookie == TYPE_NUMBER_REAL) {
 			invalid_stream(L, rb);
 		}
-		array_size = get_integer(L, rb, cookie);
+		array_size = (int)get_integer(L, rb, cookie);
 	}
 	luaL_checkstack(L, LUA_MINSTACK, NULL);
 	lua_createtable(L, array_size, 0);
@@ -578,7 +578,7 @@ luaseri_unpack(lua_State* L) {
 	}
 	else {
 		buffer = lua_touserdata(L, 1);
-		len = luaL_checkinteger(L, 2);
+		len = (int)luaL_checkinteger(L, 2);
 	}
 	if (len == 0) {
 		return 0;
@@ -790,13 +790,13 @@ lsend(lua_State* L) {
 		dest_string = get_dest_string(L, 1);
 	}
 
-	int type = luaL_checkinteger(L, 2);
+	int type = (int)luaL_checkinteger(L, 2);
 	int session = 0;
 	if (lua_isnil(L, 3)) {
 		type |= PTYPE_TAG_ALLOCSESSION;
 	}
 	else {
-		session = luaL_checkinteger(L, 3);
+		session = (int)luaL_checkinteger(L, 3);
 	}
 
 	int mtype = lua_type(L, 4);
@@ -817,7 +817,7 @@ lsend(lua_State* L) {
 	}
 	case LUA_TLIGHTUSERDATA: {
 		void* msg = lua_touserdata(L, 4);
-		int size = luaL_checkinteger(L, 5);
+		int size = (int)luaL_checkinteger(L, 5);
 		if (dest_string) {
 			session = ctx->sendname(ctx, 0, dest_string, type | PTYPE_TAG_DONTCOPY, session, msg, size);
 		}
@@ -847,8 +847,8 @@ lredirect(lua_State* L) {
 		dest_string = get_dest_string(L, 1);
 	}
 	uint32_t source = (uint32_t)luaL_checkinteger(L, 2);
-	int type = luaL_checkinteger(L, 3);
-	int session = luaL_checkinteger(L, 4);
+	int type = (int)luaL_checkinteger(L, 3);
+	int session = (int)luaL_checkinteger(L, 4);
 
 	int mtype = lua_type(L, 5);
 	switch (mtype) {
@@ -868,7 +868,7 @@ lredirect(lua_State* L) {
 	}
 	case LUA_TLIGHTUSERDATA: {
 		void* msg = lua_touserdata(L, 5);
-		int size = luaL_checkinteger(L, 6);
+		int size = (int)luaL_checkinteger(L, 6);
 		if (dest_string) {
 			session = ctx->sendname(ctx, source, dest_string, type | PTYPE_TAG_DONTCOPY, session, msg, size);
 		}
@@ -939,7 +939,7 @@ ltostring(lua_State* L) {
 		return 0;
 	}
 	char* msg = (char*)lua_touserdata(L, 1);
-	int sz = luaL_checkinteger(L, 2);
+	int sz = (int)luaL_checkinteger(L, 2);
 	lua_pushlstring(L, msg, sz);
 	return 1;
 }
@@ -960,12 +960,11 @@ static int
 lpackstring(lua_State* L) {
 	luaseri_pack(L);
 	char* str = (char*)lua_touserdata(L, -2);
-	int sz = lua_tointeger(L, -1);
+	int sz = (int)lua_tointeger(L, -1);
 	lua_pushlstring(L, str, sz);
 	free(str);
 	return 1;
 }
-
 
 static int
 ltrash(lua_State* L) {
@@ -989,7 +988,7 @@ ltrash(lua_State* L) {
 
 static int
 ltointeger(lua_State* L) {
-	lua_Number n = luaL_checknumber(L, 1);
+	int n = (int)luaL_checknumber(L, 1);
 	lua_pushinteger(L, n);
 	return 1;
 }
@@ -997,9 +996,9 @@ ltointeger(lua_State* L) {
 static int
 lsocket_send(lua_State* L) {
 	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
-	int fd = luaL_checkinteger(L, 1);
+	int fd = (int)luaL_checkinteger(L, 1);
 	const char* ptr = luaL_checkstring(L, 2);
-	size_t sz = luaL_checkinteger(L, 3);
+	int sz = (int)luaL_checkinteger(L, 3);
 	int n = ctx->sserver_send(fd, ptr, sz);
 	lua_pushinteger(L, n);
 	return 1;
@@ -1022,7 +1021,7 @@ lsocket_unpack(lua_State* L) {
 	return 4;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_lcobweb(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

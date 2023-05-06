@@ -116,7 +116,7 @@ cobweb_context_queryname(struct context_t* ctx, const char* name) {
 	case '.':
 		return cobweb_handle_findname(name + 1);
 	}
-	ccp_error("Don't support query global name %s", name);
+	platform_error("Don't support query global name %s", name);
 	return 0;
 }
 
@@ -171,7 +171,7 @@ cmd_reg(struct context_t* ctx, const char* param) {
 		return cobweb_handle_namehandle(ctx->_data->handle, param + 1);
 	}
 	else {
-		ccp_error("Can't register global name %s in C", param);
+		platform_error("Can't register global name %s in C", param);
 		return NULL;
 	}
 }
@@ -192,33 +192,25 @@ cmd_query(struct context_t* ctx, const char* param) {
 static const char*
 cmd_name(struct context_t* ctx, const char* param) {
 	size_t size = strlen(param);
-	char* name = (char*)cobweb_malloc(size + 1);
-	char* handle = (char*)cobweb_malloc(size + 1);
+	char* name = (char*)cobweb_malloca(size + 1);
+	char* handle = (char*)cobweb_malloca(size + 1);
 	if (name == NULL || handle == NULL) {
 		return NULL;
 	}
 	sscanf(param, "%s %s", name, handle);
 	if (handle[0] != ':') {
-		cobweb_free(name);
-		cobweb_free(handle);
 		return NULL;
 	}
 	uint32_t handle_id = strtoul(handle + 1, NULL, 16);
 	if (handle_id == 0) {
-		cobweb_free(name);
-		cobweb_free(handle);
 		return NULL;
 	}
 	if (name[0] == '.') {
 		const char* result = cobweb_handle_namehandle(handle_id, name + 1);
-		cobweb_free(name);
-		cobweb_free(handle);
 		return result;
 	}
 	else {
-		ccp_error("Can't set global name %s in C", name);
-		cobweb_free(name);
-		cobweb_free(handle);
+		platform_error("Can't set global name %s in C", name);
 		return NULL;
 	}
 }
@@ -300,7 +292,6 @@ cmd_endless(struct context_t* ctx, const char* param) {
 
 static const char*
 cmd_abort(struct context_t* ctx, const char* param) {
-	/* state is exit */
 
 	return NULL;
 }
@@ -324,9 +315,9 @@ cmd_logon(struct context_t* ctx, const char* param) {
 		const char* logpath = "";
 		if (logpath != NULL) {
 			size_t sz = strlen(logpath);
-			char* tmp = (char*)cobweb_malloc(sz + 16);
+			char* tmp = (char*)cobweb_malloca(sz + 16);
 			sprintf(tmp, "%s/%08x.log", logpath, handle);
-			dest_ctx->_data->logfile = fopen("log", "ab");
+			dest_ctx->_data->logfile = fopen(tmp, "ab");
 		}
 	}
 	return NULL;
@@ -340,7 +331,7 @@ cmd_logoff(struct context_t* ctx, const char* param) {
 	}
 	struct context_t* dest_ctx = cobweb_handle_grab(handle);
 	if (dest_ctx != NULL && dest_ctx->_data->logfile != NULL) {
-		ccp_error("Close log file :%08x", handle);
+		platform_error("Close log file :%08x", handle);
 		fprintf(dest_ctx->_data->logfile, "close time: %u\n", (uint32_t)cobweb_timestamp());
 		fclose(dest_ctx->_data->logfile);
 		dest_ctx->_data->logfile = NULL;
@@ -510,7 +501,6 @@ cobweb_context_sendname(struct context_t* ctx, uint32_t source, const char* addr
 		//rmsg->destination.handle = 0;
 		//rmsg->message = data;
 		//rmsg->sz = sz;
-
 		//harbor_send(rmsg, source, session);
 		return session;
 	}
@@ -551,7 +541,6 @@ cobweb_context_new(const char* name, const char* param) {
 		cobweb_free(private_data);
 		return NULL;
 	}
-
 
 	ctx->_data = private_data;
 	ctx->_data->mod = mod;
@@ -673,7 +662,7 @@ cobweb_context_log(struct context_t* ctx, const char* format, ...) {
 	}
 	if (len < 0) {
 		cobweb_free(data);
-		ccp_red_print("vsnprintf error :");
+		platform_red_print("vsnprintf error :");
 		return;
 	}
 
@@ -709,7 +698,7 @@ cobweb_context_error(struct context_t* ctx, const char* format, ...) {
 	}
 	if (len < 0) {
 		cobweb_free(data);
-		ccp_red_print("vsnprintf error :");
+		platform_red_print("vsnprintf error :");
 		return;
 	}
 

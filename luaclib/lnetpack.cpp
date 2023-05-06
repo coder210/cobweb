@@ -20,7 +20,7 @@ tolstring(lua_State* L, size_t* sz, int index) {
 	const char* ptr;
 	if (lua_isuserdata(L, index)) {
 		ptr = (const char*)lua_touserdata(L, index);
-		*sz = (size_t)luaL_checkinteger(L, index + 1);
+		*sz = (size_t)(int)luaL_checkinteger(L, index + 1);
 	}
 	else {
 		ptr = luaL_checklstring(L, index, sz);
@@ -68,7 +68,7 @@ lnetpack_free(struct lua_State* L) {
 static int
 lnetpack_tostring(lua_State* L) {
 	void* ptr = lua_touserdata(L, 1);
-	int size = luaL_checkinteger(L, 2);
+	int size = (int)luaL_checkinteger(L, 2);
 	if (ptr == NULL) {
 		lua_pushliteral(L, "");
 	}
@@ -79,7 +79,7 @@ lnetpack_tostring(lua_State* L) {
 	return 1;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_netpack(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

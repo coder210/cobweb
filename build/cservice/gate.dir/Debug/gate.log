@@ -1,2 +1,4 @@
-﻿  gate.cpp
+﻿  Building Custom Rule E:/github/cobweb/cservice/CMakeLists.txt
+  gate.cpp
+    正在创建库 E:/github/cobweb/build/cservice/Debug/gate.lib 和对象 E:/github/cobweb/build/cservice/Debug/gate.exp
   gate.vcxproj -> E:\github\cobweb\build\cservice\Debug\gate.dll

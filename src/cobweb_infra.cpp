@@ -9,20 +9,16 @@ History:
 ***********************************************/
 #include "cobweb.h"
 
-// node
 struct node_t {
 	void* data; // data
 	struct node_t* next;
 };
 
-// list
 struct linkedlist_t {
 	struct mutex_t* mutex;
 	struct node_t* head;
 };
 
-
-// queue
 struct queue_t {
 	struct mutex_t* mutex;
 	struct node_t* front;
@@ -30,13 +26,12 @@ struct queue_t {
 	int length;
 };
 
-
 struct linkedlist_t*
 cobweb_linkedlist_create() {
 	struct linkedlist_t* list = (struct linkedlist_t*)cobweb_malloc(sizeof(struct linkedlist_t));
 	if (list != NULL) {
 		list->head = NULL;
-		list->mutex = ccp_mutex_create();
+		list->mutex = platform_mutex_create();
 	}
 	return list;
 }
@@ -45,7 +40,7 @@ void*
 cobweb_linkedlist_query(struct linkedlist_t* list, linkedlist_cb f, void* param) {
 	void* data = NULL;
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* itor = list->head;
 	while (itor) {
@@ -56,7 +51,7 @@ cobweb_linkedlist_query(struct linkedlist_t* list, linkedlist_cb f, void* param)
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return data;
 }
@@ -65,7 +60,7 @@ void
 cobweb_linkedlist_each(struct linkedlist_t* list, linkedlist_cb f, void* param) {
 	struct node_t* itor = list->head;
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	while (itor) {
 		if (f(itor->data, param)) {
@@ -74,14 +69,14 @@ cobweb_linkedlist_each(struct linkedlist_t* list, linkedlist_cb f, void* param) 
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 }
 
 bool
 cobweb_linkedlist_contain(struct linkedlist_t* list, void* data) {
 	bool result = false;
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* itor = list->head;
 	while (itor) {
@@ -92,7 +87,7 @@ cobweb_linkedlist_contain(struct linkedlist_t* list, void* data) {
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -101,7 +96,7 @@ bool
 cobweb_linkedlist_containf(struct linkedlist_t* list, linkedlist_cb f, void* param) {
 	bool result = false;
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* itor = list->head;
 	while (itor) {
@@ -112,7 +107,7 @@ cobweb_linkedlist_containf(struct linkedlist_t* list, linkedlist_cb f, void* par
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -121,7 +116,7 @@ int
 cobweb_linkedlist_length(struct linkedlist_t* list) {
 	int count = 0;
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* itor = list->head;
 	while (itor) {
@@ -129,7 +124,7 @@ cobweb_linkedlist_length(struct linkedlist_t* list) {
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return count;
 }
@@ -141,7 +136,7 @@ cobweb_linkedlist_insert(struct linkedlist_t* list, void* data) {
 		memset(item, 0, sizeof(struct node_t));
 		item->data = data;
 
-		ccp_mutex_lock(list->mutex);
+		platform_mutex_lock(list->mutex);
 
 		if (list->head == NULL) {
 			list->head = item;
@@ -151,7 +146,7 @@ cobweb_linkedlist_insert(struct linkedlist_t* list, void* data) {
 			list->head = item;
 		}
 
-		ccp_mutex_unlock(list->mutex);
+		platform_mutex_unlock(list->mutex);
 	}
 
 	return item;
@@ -164,7 +159,7 @@ cobweb_linkedlist_removef(struct linkedlist_t* list, linkedlist_cb f, void* para
 		return result;
 	}
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* prev = list->head;
 	struct node_t* it = list->head->next;
@@ -181,7 +176,7 @@ cobweb_linkedlist_removef(struct linkedlist_t* list, linkedlist_cb f, void* para
 		result = true;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -193,7 +188,7 @@ cobweb_linkedlist_remove(struct linkedlist_t* list, void* data) {
 		return result;
 	}
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* prev = list->head;
 	struct node_t* it = list->head->next;
@@ -214,7 +209,7 @@ cobweb_linkedlist_remove(struct linkedlist_t* list, void* data) {
 		result = true;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -226,7 +221,7 @@ cobweb_linkedlist_drainf(struct linkedlist_t* list, linkedlist_cb f, void* param
 		return result;
 	}
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	struct node_t* prev = list->head;
 	struct node_t* it = list->head->next;
@@ -251,7 +246,7 @@ cobweb_linkedlist_drainf(struct linkedlist_t* list, linkedlist_cb f, void* param
 		result = true;
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -263,7 +258,7 @@ cobweb_linkedlist_drain(struct linkedlist_t* list, void* data) {
 		return result;
 	}
 
-	ccp_mutex_lock(list->mutex);
+	platform_mutex_lock(list->mutex);
 
 	if (list->head->data == data) {
 		struct node_t* tmp = list->head;
@@ -287,7 +282,7 @@ cobweb_linkedlist_drain(struct linkedlist_t* list, void* data) {
 		}
 	}
 
-	ccp_mutex_unlock(list->mutex);
+	platform_mutex_unlock(list->mutex);
 
 	return result;
 }
@@ -295,7 +290,7 @@ cobweb_linkedlist_drain(struct linkedlist_t* list, void* data) {
 void
 cobweb_linkedlist_release(struct linkedlist_t* list) {
 	if (list != NULL) {
-		ccp_mutex_lock(list->mutex);
+		platform_mutex_lock(list->mutex);
 
 		struct node_t* itor = list->head;
 		while (itor) {
@@ -305,8 +300,8 @@ cobweb_linkedlist_release(struct linkedlist_t* list) {
 			tmp = NULL;
 		}
 
-		ccp_mutex_unlock(list->mutex);
-		ccp_mutex_release(list->mutex);
+		platform_mutex_unlock(list->mutex);
+		platform_mutex_release(list->mutex);
 		cobweb_free (list);
 	}
 }
@@ -318,7 +313,7 @@ cobweb_queue_create() {
 		queue->front = NULL;
 		queue->rear = NULL;
 		queue->length = 0;
-		queue->mutex = ccp_mutex_create();
+		queue->mutex = platform_mutex_create();
 	}
 	return queue;
 }
@@ -327,7 +322,7 @@ bool
 cobweb_queue_contain(struct queue_t* queue, void* data) {
 	bool result = false;
 
-	ccp_mutex_lock(queue->mutex);
+	platform_mutex_lock(queue->mutex);
 
 	struct node_t* itor = queue->front;
 	while (itor != NULL) {
@@ -338,7 +333,7 @@ cobweb_queue_contain(struct queue_t* queue, void* data) {
 		itor = itor->next;
 	}
 
-	ccp_mutex_unlock(queue->mutex);
+	platform_mutex_unlock(queue->mutex);
 
 	return result;
 }
@@ -347,20 +342,20 @@ void*
 cobweb_queue_first(struct queue_t* queue) {
 	void* data = NULL;
 
-	ccp_mutex_lock(queue->mutex);
+	platform_mutex_lock(queue->mutex);
 
 	if (queue->length >= 1) {
 		data = queue->front->data;
 	}
 
-	ccp_mutex_unlock(queue->mutex);
+	platform_mutex_unlock(queue->mutex);
 
 	return data;
 }
 
 void
 cobweb_eq(struct queue_t* queue, void* data) {
-	ccp_mutex_lock(queue->mutex);
+	platform_mutex_lock(queue->mutex);
 
 	struct node_t* item = (struct node_t*)cobweb_malloc(sizeof(struct node_t));
 	if (item != NULL) {
@@ -379,13 +374,13 @@ cobweb_eq(struct queue_t* queue, void* data) {
 
 	}
 
-	ccp_mutex_unlock(queue->mutex);
+	platform_mutex_unlock(queue->mutex);
 }
 
 //  enqueue and distinct queue
 void
 cobweb_eqd(struct queue_t* queue, void* data) {
-	ccp_mutex_lock(queue->mutex);
+	platform_mutex_lock(queue->mutex);
 
 	bool result = false;
 	struct node_t* itor = queue->front;
@@ -415,14 +410,14 @@ cobweb_eqd(struct queue_t* queue, void* data) {
 		}
 	}
 
-	ccp_mutex_unlock(queue->mutex);
+	platform_mutex_unlock(queue->mutex);
 }
 
 void*
 cobweb_dq(struct queue_t* queue) {
 	void* data = NULL;
 
-	ccp_mutex_lock(queue->mutex);
+	platform_mutex_lock(queue->mutex);
 
 	if (queue->length == 1) {
 		data = queue->front->data;
@@ -439,7 +434,7 @@ cobweb_dq(struct queue_t* queue) {
 		queue->length--;
 	}
 
-	ccp_mutex_unlock(queue->mutex);
+	platform_mutex_unlock(queue->mutex);
 
 	return data;
 }
@@ -449,9 +444,9 @@ cobweb_queue_length(struct queue_t* queue) {
 	int length = 0;
 
 	if (queue != NULL) {
-		ccp_mutex_lock(queue->mutex);
+		platform_mutex_lock(queue->mutex);
 		length = queue->length;
-		ccp_mutex_unlock(queue->mutex);
+		platform_mutex_unlock(queue->mutex);
 	}
 
 	return length;
@@ -461,7 +456,7 @@ void
 cobweb_queue_release(struct queue_t* queue) {
 	if (queue != NULL) {
 
-		ccp_mutex_lock(queue->mutex);
+		platform_mutex_lock(queue->mutex);
 
 		struct node_t* itor = queue->front;
 		while ((itor != NULL
@@ -474,8 +469,8 @@ cobweb_queue_release(struct queue_t* queue) {
 			queue->length--;
 		}
 
-		ccp_mutex_unlock(queue->mutex);
-		ccp_mutex_release(queue->mutex);
+		platform_mutex_unlock(queue->mutex);
+		platform_mutex_release(queue->mutex);
 		cobweb_free (queue);
 	}
 }

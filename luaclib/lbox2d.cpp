@@ -22,8 +22,8 @@ static int
 lworld_step(struct lua_State* L) {
 	b2World* world = (b2World*)lua_touserdata(L, 1);
 	float dt = (float)luaL_checknumber(L, 2);
-	int velocityIterations = luaL_checkinteger(L, 3);
-	int positionIterations = luaL_checkinteger(L, 4);
+	int velocityIterations = (int)(int)luaL_checkinteger(L, 3);
+	int positionIterations = (int)(int)luaL_checkinteger(L, 4);
 	world->Step(dt, velocityIterations, positionIterations);
 	return 0;
 }
@@ -151,7 +151,7 @@ lcreate_box_fixture(struct lua_State* L) {
 	b2Body* body = (b2Body*)lua_touserdata(L, 1);
 	float hx = (float)luaL_checknumber(L, 2);
 	float hy = (float)luaL_checknumber(L, 3);
-	int groupIndex = luaL_checkinteger(L, 4);
+	int groupIndex = (int)luaL_checkinteger(L, 4);
 	float density = (float)luaL_checknumber(L, 5);
 	float friction = (float)luaL_checknumber(L, 6);
 	float restitution = (float)luaL_checknumber(L, 7);
@@ -174,7 +174,7 @@ lcreate_edge_fixture(struct lua_State* L) {
 	float v1_y = (float)luaL_checknumber(L, 3);
 	float v2_x = (float)luaL_checknumber(L, 4);
 	float v2_y = (float)luaL_checknumber(L, 5);
-	int groupIndex = luaL_checkinteger(L, 6);
+	int groupIndex = (int)luaL_checkinteger(L, 6);
 	float density = (float)luaL_checknumber(L, 7);
 	float friction = (float)luaL_checknumber(L, 8);
 	float restitution = (float)luaL_checknumber(L, 9);
@@ -198,7 +198,7 @@ static int
 lcreate_circle_fixture(struct lua_State* L) {
 	b2Body* body = (b2Body*)lua_touserdata(L, 1);
 	float radius = (float)luaL_checknumber(L, 2);
-	int groupIndex = luaL_checkinteger(L, 3);
+	int groupIndex = (int)luaL_checkinteger(L, 3);
 	float density = (float)luaL_checknumber(L, 4);
 	float friction = (float)luaL_checknumber(L, 5);
 	float restitution = (float)luaL_checknumber(L, 6);
@@ -214,7 +214,7 @@ lcreate_circle_fixture(struct lua_State* L) {
 	return 0;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_box2d(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

@@ -29,28 +29,28 @@ void
 cobweb_env_init(void) {
 	E = (struct env_t*)cobweb_malloc(sizeof(struct env_t));
 	if (E != NULL) {
-		E->mutex = ccp_mutex_create();
+		E->mutex = platform_mutex_create();
 		E->L = luaL_newstate();
 	}
 }
 
 const char*
 cobweb_getenv(const char* key) {
-	ccp_mutex_lock(E->mutex);
+	platform_mutex_lock(E->mutex);
 
 	lua_State* L = E->L;
 	lua_getglobal(L, key);
 	const char* result = lua_tostring(L, -1);
 	lua_pop(L, 1);
 
-	ccp_mutex_unlock(E->mutex);
+	platform_mutex_unlock(E->mutex);
 
 	return result;
 }
 
 void
 cobweb_setenv(const char* key, const char* value) {
-	ccp_mutex_lock(E->mutex);
+	platform_mutex_lock(E->mutex);
 
 	lua_State* L = E->L;
 	lua_getglobal(L, key);
@@ -58,14 +58,14 @@ cobweb_setenv(const char* key, const char* value) {
 	lua_pushstring(L, value);
 	lua_setglobal(L, key);
 
-	ccp_mutex_unlock(E->mutex);
+	platform_mutex_unlock(E->mutex);
 }
 
 void
 cobweb_env_release(void) {
 	if (E != NULL) {
 		lua_close(E->L);
-		ccp_mutex_release(E->mutex);
+		platform_mutex_release(E->mutex);
 		cobweb_free (E);
 		E = NULL;
 	}

@@ -38,7 +38,7 @@ thread_monitor(void* p) {
 		}
 		for (i = 0; i < n; i++) {
 			CHECK_ABORT
-			ccp_msleep(1000);
+			platform_msleep(1000);
 		}
 
 		cobweb_monitor_wakeup(0);
@@ -49,7 +49,7 @@ thread_monitor(void* p) {
 
 bool
 _tick_cb(uint32_t handle, int session, 
-	void* data, size_t sz, void* arg) {
+void* data, size_t sz, void* arg) {
 	struct context_t* ctx = cobweb_handle_grab(handle);
 	if (ctx != NULL) {
 		cobweb_context_send(ctx, 0, handle, PTYPE_RESPONSE, session, data, sz);
@@ -86,14 +86,13 @@ thread_main(void* p) {
 	luaL_openlibs(L);
 	int err = luaL_dofile(L, start_file);
 	if (err) {
-		ccp_red_print(lua_tostring(L, -1));
+		platform_red_print(lua_tostring(L, -1));
 	}
 	else {
 		lua_close(L);
 	}
 	return NULL;
 }
-
 
 static void*
 thread_worker(void* p) {
@@ -115,7 +114,6 @@ thread_worker(void* p) {
 	return NULL;
 }
 
-
 static void
 _start(int thread) {
 	int total_thread = thread + 4;
@@ -123,19 +121,17 @@ _start(int thread) {
 	assert(pid != NULL);
 	struct worker_parm* pwp = (struct worker_parm*)cobweb_malloca(sizeof(struct worker_parm) * thread);
 	assert(pwp != NULL);
-	pid[0] = ccp_thread_create(thread_monitor, NULL);
-	pid[1] = ccp_thread_create(thread_timer, NULL);
-	pid[2] = ccp_thread_create(thread_socket, NULL);
-	pid[3] = ccp_thread_create(thread_main, NULL);
+	pid[0] = platform_thread_create(thread_monitor, NULL);
+	pid[1] = platform_thread_create(thread_timer, NULL);
+	pid[2] = platform_thread_create(thread_socket, NULL);
+	pid[3] = platform_thread_create(thread_main, NULL);
 	for (int i = 0; i < thread; i++) {
 		pwp[i].m = cobweb_query_monitor(i);
 		pwp[i].id = i;
-		pid[4 + i] = ccp_thread_create(thread_worker, &pwp[i]);
+		pid[4 + i] = platform_thread_create(thread_worker, &pwp[i]);
 	}
-
-	/* wait thread exit */
 	for (int i = 0; i < total_thread; i++) {
-		ccp_thread_wait(&pid[i]);
+		platform_thread_wait(&pid[i]);
 	}
 }
 
@@ -162,7 +158,6 @@ _print_blessing() {
 	cobweb_context_log(NULL, " `          快加工资       不改需求      ");
 }
 
-
 void
 cobweb_start(struct config_t* config) {
 	cobweb_globalmq_init();
@@ -175,7 +170,7 @@ cobweb_start(struct config_t* config) {
 	/* lunch logger */
 	const char* project = cobweb_getenv("project");
 	if (cobweb_context_new(config->logservice, project) == NULL) {
-		ccp_error("Can't launch %s service", config->logservice);
+		platform_error("Can't launch %s service", config->logservice);
 		return;
 	}
 

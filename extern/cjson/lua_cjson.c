@@ -42,7 +42,9 @@
 #include <limits.h>
 #include "strbuf.h"
 #include "fpconv.h"
-#include "lua_cjson.h"
+#include "../lua/lapi.h"
+#include "../lua/lualib.h"
+#include "../lua/lauxlib.h"
 
 #ifndef CJSON_MODNAME
 #define CJSON_MODNAME   "cjson"
@@ -50,6 +52,12 @@
 
 #ifndef CJSON_VERSION
 #define CJSON_VERSION   "2.1.0"
+#endif
+
+#ifdef _WIN32
+#define MOD_API __declspec(dllexport)
+#else
+#define MOD_API extern
 #endif
 
 /* Workaround for Solaris platforms missing isinf() */
@@ -1419,7 +1427,7 @@ static int lua_cjson_safe_new(lua_State *l)
     return 1;
 }
 
-int luaopen_cjson(lua_State *L)
+MOD_API int luaopen_cjson(lua_State *L)
 {
     lua_cjson_new(L);
 

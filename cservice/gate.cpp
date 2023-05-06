@@ -9,7 +9,7 @@ struct gate {
 	uint32_t listen_id;
 };
 
-MOD_API struct gate*
+COBWEB_CMOD_API struct gate*
 gate_create(void) {
 	struct gate* g = (struct gate*)malloc(sizeof(struct gate));
 	assert(g != NULL);
@@ -18,7 +18,7 @@ gate_create(void) {
 	return g;
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 gate_release(struct gate* g) {
 	if (g != NULL) {
 		free(g);
@@ -49,7 +49,7 @@ _cb(struct context_t* ctx, void* ud, int type, int session, uint32_t source, con
 	return 0;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 gate_init(struct gate* g, struct context_t* ctx, char* parm) {
 	g->ctx = ctx;
 	ctx->callback(ctx, g, _cb);

@@ -25,7 +25,7 @@ lmysql_create(struct lua_State* L) {
 	const char* user = luaL_checkstring(L, 2);
 	const char* passwd = luaL_checkstring(L, 3);
 	const char* db = luaL_checkstring(L, 4);
-	unsigned int port = luaL_checkinteger(L, 5);
+	unsigned int port = (unsigned int)luaL_checkinteger(L, 5);
 	MYSQL* context = mysql_init(NULL);
 	if (!mysql_real_connect(context, host, user, passwd, db, port, NULL, 0)) {
 		lua_pushboolean(L, false);
@@ -119,7 +119,7 @@ lmysql_close(struct lua_State* L) {
 	return 0;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_mysql(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

@@ -15,11 +15,11 @@ class Test2 : public Test
 public:
 	Test2()
 	{
-		int sizeX = 1;
-		int sizeY = 1;
+		float sizeX = 1;
+		float sizeY = 1;
 		int tileCount = 10;
 		std::list<TileEntity> tiles;
-		for (size_t i = 0; i < tileCount; i++) {
+		for (int i = 0; i < tileCount; i++) {
 			TileEntity tileEntity;
 			tileEntity.x = 1;
 			tileEntity.y = 1;

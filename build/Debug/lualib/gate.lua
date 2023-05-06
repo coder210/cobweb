@@ -9,7 +9,7 @@ do
         name = "socket",
         id = cobweb.PTYPE_SOCKET,
         pack = cobweb.pack,
-        unpack = cobweb.socket_unpack,
+        unpack = c.socket_unpack,
     }
 end
 

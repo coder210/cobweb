@@ -2,9 +2,11 @@
 #define _DEF_H
 
 #ifdef _COBWEB_WIN32
-#define MOD_API extern "C" __declspec(dllexport)
+#define COBWEB_CMOD_API extern "C" __declspec(dllexport)
+#define COBWEB_MOD_API __declspec(dllexport)
 #else
-#define MOD_API
+#define COBWEB_CMOD_API extern
+#define COBWEB_MOD_API extern
 #endif
 
 

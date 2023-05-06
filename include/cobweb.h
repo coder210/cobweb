@@ -179,7 +179,6 @@ void* cobweb_dq(struct queue_t* queue);
 int cobweb_queue_length(struct queue_t* queue);
 void cobweb_queue_release(struct queue_t* queue);
 
-
 /* module */
 void cobweb_module_init(const char*);
 void cobweb_module_release(void);
@@ -257,9 +256,6 @@ void cobweb_write_short(uint8_t*, short);
 short cobweb_read_short(uint8_t*);
 void cobweb_write_int(uint8_t*, int);
 int cobweb_read_int(uint8_t*);
-struct datetime_t cobweb_datetime(const char*);
-struct datetime_t cobweb_currdate(void);
-struct datetime_t cobweb_currtime(void);
 
 /* env */
 void cobweb_env_init(void);

@@ -40,7 +40,7 @@ static inline IINT64
 _iclock64(void) {
 	long s, u;
 	IINT64 value;
-	ccp_timeofday(&s, &u);
+	platform_timeofday(&s, &u);
 	value = ((IINT64)s) * 1000 + (u / 1000);
 	return value;
 }
@@ -56,7 +56,7 @@ _output(const char* data, int size,
 	int ret = 0;
 	struct client_t* client = (struct client_t*)user;
 	if (client != NULL) {
-		ret = ccp_udp_send(client->saddr.sockfd, data, size, client->saddr.ip, client->saddr.port);
+		ret = platform_udp_send(client->saddr.sockfd, data, size, client->saddr.ip, client->saddr.port);
 	}
 	return ret;
 }
@@ -148,7 +148,7 @@ _accept(struct kcpserver_t* inst, const char* ip, int port) {
 	inst->id++;
 	struct client_t* client = _kcpclient_new(inst->id, inst->serverfd, ip, port);
 	if (client == NULL) {
-		ccp_log("create client failed!");
+		platform_log("create client failed!");
 		return;
 	}
 
@@ -156,7 +156,7 @@ _accept(struct kcpserver_t* inst, const char* ip, int port) {
 	if (ret) {
 		uint8_t buffer[4] = { 0 };
 		_write_int(buffer, client->fd);
-		ccp_udp_send(client->saddr.sockfd, (char*)buffer, 4, ip, port);
+		platform_udp_send(client->saddr.sockfd, (char*)buffer, 4, ip, port);
 		struct socket_message_t* socket_message = (struct socket_message_t*)cobweb_malloc(sizeof(struct socket_message_t));
 		if (socket_message != NULL) {
 			socket_message->fd = client->fd;
@@ -209,12 +209,12 @@ cobweb_kcpserver_create(const char* ip, int port) {
 	memset(inst, 0, sizeof(struct kcpserver_t));
 	inst->id = 300;
 	inst->clients = cobweb_linkedlist_create();
-	inst->serverfd = ccp_udp_create();
+	inst->serverfd = platform_udp_create();
 	inst->done = true;
 	inst->timeout = 120;
-	ccp_socket_nonblock(inst->serverfd);
-	if (!ccp_socket_bind(inst->serverfd, ip, port)) {
-		ccp_red_print("udp bind error!");
+	platform_socket_nonblock(inst->serverfd);
+	if (!platform_socket_bind(inst->serverfd, ip, port)) {
+		platform_red_print("udp bind error!");
 	}
 	return inst;
 }
@@ -238,7 +238,7 @@ cobweb_kcpserver_dispatch(struct kcpserver_t* inst) {
 		char buffer[COBWEB_MESSAGE_SIZE] = { 0 };
 		char ip[COBWEB_MAX_IP] = { 0 };
 		int port = 0;
-		int ret = ccp_udp_recv(inst->serverfd, buffer, ip, &port);
+		int ret = platform_udp_recv(inst->serverfd, buffer, ip, &port);
 		if (ret != -1 && ret >= 2) {
 			int conv = _read_int((uint8_t*)buffer);
 			if (conv == 0) {
@@ -261,7 +261,7 @@ cobweb_kcpserver_loopexit(struct kcpserver_t* inst) {
 void
 cobweb_kcpserver_release(struct kcpserver_t* inst) {
 	if (inst != NULL) {
-		ccp_socket_close(inst->serverfd);
+		platform_socket_close(inst->serverfd);
 		cobweb_linkedlist_release(inst->clients);
 		cobweb_free (inst);
 		inst = NULL;

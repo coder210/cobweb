@@ -3,8 +3,7 @@ file(GLOB LUA_HEADER_FILES "./*.h")
 file(GLOB LUA_SOURCE_FILES "./*.c")
 
 
-#添加宏定义
-add_definitions(-D LUA_BUILD_AS_DLL)
+add_definitions(-DLUA_BUILD_AS_DLL)
 
 add_library(lua SHARED ${LUA_HEADER_FILES} ${LUA_SOURCE_FILES})
 

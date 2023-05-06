@@ -230,7 +230,7 @@ ldes_decrypt(lua_State* L) {
 }
 
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_crypt(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

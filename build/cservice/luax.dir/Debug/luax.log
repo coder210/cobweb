@@ -1,3 +1,5 @@
-﻿  luax.cpp
+﻿  Building Custom Rule E:/github/cobweb/cservice/CMakeLists.txt
+  luax.cpp
 E:\github\cobweb\cservice\luax.cpp(120,16): warning C4244: “初始化”: 从“lua_Integer”转换到“size_t”，可能丢失数据
+    正在创建库 E:/github/cobweb/build/cservice/Debug/luax.lib 和对象 E:/github/cobweb/build/cservice/Debug/luax.exp
   luax.vcxproj -> E:\github\cobweb\build\cservice\Debug\luax.dll

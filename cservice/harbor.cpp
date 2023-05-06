@@ -31,7 +31,7 @@ struct harbor {
 };
 
 
-MOD_API struct harbor *
+COBWEB_CMOD_API struct harbor *
 harbor_create(void) {
 	struct harbor * h = (struct harbor*)malloc(sizeof(struct harbor));
 	assert(h != NULL);
@@ -39,12 +39,12 @@ harbor_create(void) {
 	return h;
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 harbor_release(struct harbor *h) {
 	free(h);
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 harbor_init(struct harbor *h, struct skynet_context *ctx, const char * args) {
 	h->ctx = ctx;
 	int harbor_id = 0;

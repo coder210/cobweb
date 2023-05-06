@@ -39,15 +39,13 @@ public:
 			bodyDef.position = b2Vec2(4, -4);
 			bodyDef.fixedRotation = true;
 			b2Body* body = m_world->CreateBody(&bodyDef);
-			//����һ��2x2�������κ���
 			b2PolygonShape boxShape;
 			boxShape.SetAsBox(halfSizeX - 0.1, halfSizeY - 0.1);
-			//Ϊ�����̬body���ò���
 			b2FixtureDef fixtureDef;
 			fixtureDef.shape = &boxShape;
-			fixtureDef.density = 1.0f; //�ܶ�
-			fixtureDef.friction = 0.3f; //Ħ��ϵ��
-			fixtureDef.restitution = 0.0f; //�ָ�ϵ��
+			fixtureDef.density = 1.0f;
+			fixtureDef.friction = 0.3f; 
+			fixtureDef.restitution = 0.0f; 
 			body->CreateFixture(&fixtureDef);
 		}
 	}

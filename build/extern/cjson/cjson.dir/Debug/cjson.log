@@ -1,1 +1,7 @@
-﻿  cjson.vcxproj -> E:\github\cobweb\build\extern\cjson\Debug\cjson.dll
+﻿  Building Custom Rule E:/github/cobweb/extern/cjson/CMakeLists.txt
+  fpconv.c
+  lua_cjson.c
+  strbuf.c
+  正在生成代码...
+    正在创建库 E:/github/cobweb/build/extern/cjson/Debug/cjson.lib 和对象 E:/github/cobweb/build/extern/cjson/Debug/cjson.exp
+  cjson.vcxproj -> E:\github\cobweb\build\extern\cjson\Debug\cjson.dll

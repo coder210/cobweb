@@ -13,17 +13,17 @@ extern "C" {
 
 static int
 ltcp_create(struct lua_State* L) {
-	int sockfd = ccp_tcp_create();
+	int sockfd = platform_tcp_create();
 	lua_pushinteger(L, sockfd);
 	return 1;
 }
 
 static int
 ltcp_connect(struct lua_State* L) {
-	lua_Integer sockfd = lua_tointeger(L, 1);
+	int sockfd = (int)lua_tointeger(L, 1);
 	const char* ip = luaL_checkstring(L, 2);
-	lua_Integer port = luaL_checkinteger(L, 3);
-	if (ccp_tcp_connect(sockfd, ip, port)) {
+	int port = (int)luaL_checkinteger(L, 3);
+	if (platform_tcp_connect(sockfd, ip, port)) {
 		lua_pushboolean(L, true);
 		lua_pushstring(L, "success");
 	}
@@ -36,10 +36,10 @@ ltcp_connect(struct lua_State* L) {
 
 static int
 ltcp_bind(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
+	int sockfd = (int)luaL_checkinteger(L, 1);
 	const char* ip = luaL_checkstring(L, 2);
-	int port = luaL_checkinteger(L, 3);
-	if (ccp_socket_bind(sockfd, ip, port)) {
+	int port = (int)luaL_checkinteger(L, 3);
+	if (platform_socket_bind(sockfd, ip, port)) {
 		lua_pushboolean(L, true);
 	}
 	else {
@@ -50,8 +50,8 @@ ltcp_bind(struct lua_State* L) {
 
 static int
 ltcp_listen(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
-	if (ccp_tcp_listen(sockfd)) {
+	int sockfd = (int)luaL_checkinteger(L, 1);
+	if (platform_tcp_listen(sockfd)) {
 		lua_pushboolean(L, true);
 		lua_pushstring(L, "success");
 	}
@@ -64,8 +64,8 @@ ltcp_listen(struct lua_State* L) {
 
 static int
 ltcp_accept(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
-	struct sockaddr_t sockaddr = ccp_tcp_accept(sockfd);
+	int sockfd = (int)luaL_checkinteger(L, 1);
+	struct sockaddr_t sockaddr = platform_tcp_accept(sockfd);
 	lua_pushinteger(L, sockaddr.sockfd);
 	lua_pushstring(L, sockaddr.ip);
 	lua_pushinteger(L, sockaddr.port);
@@ -74,8 +74,8 @@ ltcp_accept(struct lua_State* L) {
 
 static int
 ltcp_nonblock(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
-	if (ccp_socket_nonblock(sockfd)) {
+	int sockfd = (int)luaL_checkinteger(L, 1);
+	if (platform_socket_nonblock(sockfd)) {
 		lua_pushboolean(L, true);
 	}
 	else {
@@ -86,10 +86,10 @@ ltcp_nonblock(struct lua_State* L) {
 
 static int
 ltcp_recv(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
+	int sockfd = (int)luaL_checkinteger(L, 1);
 	unsigned char buf[CC_MESSAGE_SIZE];
 	memset(buf, 0, CC_MESSAGE_SIZE);
-	int len = ccp_tcp_recv(sockfd, (char*)buf);
+	int len = platform_tcp_recv(sockfd, (char*)buf);
 	if (len > 0) {
 		lua_pushinteger(L, len);
 		lua_pushlstring(L, (char*)buf, len);
@@ -105,10 +105,10 @@ ltcp_recv(struct lua_State* L) {
 
 static int
 ltcp_send(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
+	int sockfd = (int)luaL_checkinteger(L, 1);
 	size_t len = 0;
 	const char* ptr = luaL_checklstring(L, 2, &len);
-	int n = ccp_tcp_send(sockfd, ptr, len);
+	int n = platform_tcp_send(sockfd, ptr, len);
 	lua_pushinteger(L, n);
 	return 1;
 }
@@ -116,8 +116,8 @@ ltcp_send(struct lua_State* L) {
 
 static int
 ltcp_close(struct lua_State* L) {
-	int sockfd = luaL_checkinteger(L, 1);
-	if (ccp_socket_close(sockfd)) {
+	int sockfd = (int)luaL_checkinteger(L, 1);
+	if (platform_socket_close(sockfd)) {
 		lua_pushboolean(L, true);
 		lua_pushstring(L, "success");
 	}
@@ -129,7 +129,7 @@ ltcp_close(struct lua_State* L) {
 }
 
 
-MOD_API int
+COBWEB_CMOD_API int
 luaopen_tcp(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {

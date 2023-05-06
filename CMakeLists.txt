@@ -11,6 +11,28 @@ set(SAJSON_NAME sajson)
 project(${COBWEB_NAME} C CXX)
 
 
+
+
+
+
+
+add_subdirectory("extern/kcp")
+add_subdirectory("extern/lua")
+add_subdirectory("extern/box2d")
+add_subdirectory("extern/sajson")
+add_subdirectory("extern/glad")
+add_subdirectory("extern/glfw")
+add_subdirectory("extern/imgui")
+add_subdirectory("extern/crypt")
+
+#设置包含的目录
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/box2d/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_subdirectory("testbed")
+
+
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 	#添加宏定义
  	add_definitions(-D_COBWEB_LINUX)
@@ -32,6 +54,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	#添加宏定义
  	add_definitions(-D_COBWEB_WIN32)
+ 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+ 	add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+
 	#设置链接库搜索目录
 	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/build/Debug)
 	IF(CMAKE_CL_64)
@@ -42,30 +67,14 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	    message("current platform: Windows 32")
 	ENDIF(CMAKE_CL_64)
 else()
-	message("current Platform: unkonw ")
+	message("current Platform: unkonw")
 endif()
 
 
-#设置包含的目录
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern/box2d/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-
-add_subdirectory("extern/kcp")
-add_subdirectory("extern/lua")
-add_subdirectory("extern/box2d")
-add_subdirectory("extern/sajson")
 add_subdirectory("extern/cjson")
-add_subdirectory("extern/glad")
-add_subdirectory("extern/glfw")
-add_subdirectory("extern/imgui")
-add_subdirectory("extern/crypt")
 add_subdirectory("extern/platform")
 add_subdirectory("luaclib")
 add_subdirectory("cservice")
-add_subdirectory("testbed")
-
 
 file(GLOB COBWEB_HEADER_FILES "include/*.h")
 file(GLOB COBWEB_SOURCE_FILES "src/*.cpp")

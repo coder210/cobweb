@@ -171,7 +171,7 @@ lalloc(void* ud, void* ptr, size_t osize, size_t nsize) {
 	}
 }
 
-MOD_API struct luax*
+COBWEB_CMOD_API struct luax*
 luax_create(void) {
 	struct luax* l = (struct luax*)malloc(sizeof(struct luax));
 	if (l != NULL) {
@@ -183,7 +183,7 @@ luax_create(void) {
 	return l;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 luax_init(struct luax* l, struct context_t* ctx, const char* args) {
 	int sz = strlen(args);
 	char* tmp = (char*)malloc(sz + 1);
@@ -199,13 +199,13 @@ luax_init(struct luax* l, struct context_t* ctx, const char* args) {
 	return 0;
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 luax_release(struct luax* l) {
 	lua_close(l->L);
 	free(l);
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 luax_signal(struct luax* l, int signal) {
 	l->ctx->log(l->ctx, "recv a signal %d", signal);
 	if (signal == 0) {

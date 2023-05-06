@@ -51,12 +51,12 @@ _write_pid(const char* pidfile) {
 	int pid = 0;
 	int fd = open(pidfile, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
-		ccp_error("Can't create %s.", pidfile);
+		platform_error("Can't create %s.", pidfile);
 		return 0;
 	}
 	f = fdopen(fd, "r+");
 	if (f == NULL) {
-		ccp_error("Can't open %s.", pidfile);
+		platform_error("Can't open %s.", pidfile);
 		return 0;
 	}
 
@@ -64,17 +64,17 @@ _write_pid(const char* pidfile) {
 		int n = fscanf(f, "%d", &pid);
 		fclose(f);
 		if (n != 1) {
-			ccp_red_print("Can't lock and read pidfile.");
+			platform_red_print("Can't lock and read pidfile.");
 		}
 		else {
-			ccp_error("Can't lock pidfile, lock is held by pid %d.", pid);
+			platform_error("Can't lock pidfile, lock is held by pid %d.", pid);
 		}
 		return 0;
 	}
 
 	pid = getpid();
 	if (!fprintf(f, "%d\n", pid)) {
-		ccp_red_print("Can't write pid.");
+		platform_red_print("Can't write pid.");
 		close(fd);
 		return 0;
 	}
@@ -84,7 +84,7 @@ _write_pid(const char* pidfile) {
 }
 
 int
-ccp_daemon_init(const char* pidfile) {
+platform_daemon_init(const char* pidfile) {
 	int pid = _check_pid(pidfile);
 
 	if (pid) {
@@ -110,19 +110,19 @@ ccp_daemon_init(const char* pidfile) {
 }
 
 int
-ccp_daemon_exit(const char* pidfile) {
+platform_daemon_exit(const char* pidfile) {
 	return unlink(pidfile);
 }
 
 void
-ccp_exception_debug(int signo) {
+platform_exception_debug(int signo) {
 	char filename[CC_MAX_PATH];
-	sprintf(filename, "%s/%s.log", "dump", ccp_datetime("%Y-%m-%d").buffer);
+	sprintf(filename, "%s/%s.log", "dump", platform_datetime("%Y-%m-%d").buffer);
 
 	// write title
 	FILE* fp = fopen(filename, "a+");
 	if (fp != NULL) {
-		fprintf(fp, "\n=========>>>%s catch signal %d <<<=========\n", ccp_datetime("%Y-%m-%d %I:%M:%S").buffer, signo);
+		fprintf(fp, "\n=========>>>%s catch signal %d <<<=========\n", platform_datetime("%Y-%m-%d %I:%M:%S").buffer, signo);
 		fclose(fp);
 	}
 
@@ -139,7 +139,7 @@ ccp_exception_debug(int signo) {
 
 
 int
-ccp_timefd_create(void) {
+platform_timefd_create(void) {
 	int timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
 
 	/*设置定时周期,使用纳秒*/
@@ -157,14 +157,14 @@ ccp_timefd_create(void) {
 	};
 
 	if (timerfd_settime(timerfd, 0, &period, NULL) < 0) {
-		ccp_red_print("timerfd_settime error!");
+		platform_red_print("timerfd_settime error!");
 	}
 
 	return timerfd;
 }
 
 int
-ccp_timer_timeout(int timerfd) {
+platform_timer_timeout(int timerfd) {
 	uint64_t count = 0;
 	int timeout = 0;
 	if (read(timerfd, &count, sizeof(uint64_t)) == -1) {
@@ -177,7 +177,7 @@ ccp_timer_timeout(int timerfd) {
 }
 
 void
-ccp_timerfd_close(int timerfd) {
+platform_timerfd_close(int timerfd) {
 	close(timerfd);
 }
 

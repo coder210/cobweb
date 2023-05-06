@@ -41,7 +41,7 @@ char*
 cobweb_read_file(const char* filename) {
 	FILE* fp = fopen(filename, "rb");
 	if (fp == NULL) {
-		ccp_red_print("read config file failed");
+		platform_red_print("read config file failed");
 		return NULL;
 	}
 	fseek(fp, 0, SEEK_END);
@@ -102,22 +102,12 @@ cobweb_read_int(uint8_t* buffer) {
 	return r;
 }
 
-// ms
 int64_t
 cobweb_timestamp(void) {
 	long sec = 0;
 	long usec = 0;
-	ccp_timeofday(&sec, &usec);
+	platform_timeofday(&sec, &usec);
 	int64_t timestamp = sec * 1000 + usec / 1000;
 	return timestamp;
 }
 
-struct datetime_t 
-cobweb_currdate(void) {
-	return ccp_datetime("%Y%m%d");
-}
-
-struct datetime_t
-cobweb_currtime(void) {
-	return ccp_datetime("%H:%M:%S");
-}

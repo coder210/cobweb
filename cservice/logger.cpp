@@ -10,10 +10,10 @@ struct logger {
 
 struct datetime_t
 _currtime(void) {
-	return ccp_datetime("%H:%M:%S");
+	return platform_datetime("%H:%M:%S");
 }
 
-MOD_API struct logger*
+COBWEB_CMOD_API struct logger*
 logger_create(void) {
 	struct logger* inst = (struct logger*)cobweb_malloc(sizeof(struct logger));
 	if (inst != NULL) {
@@ -24,7 +24,7 @@ logger_create(void) {
 	return inst;
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 logger_release(struct logger* inst) {
 	if (inst->close) {
 		fclose(inst->handle);
@@ -40,7 +40,7 @@ _log(struct logger* inst, uint32_t source, const void* msg, size_t sz) {
 	fwrite(msg, sz, 1, inst->handle);
 	fprintf(inst->handle, "\n");
 	fflush(inst->handle);
-	ccp_log("%s>[:%08x] %s", currtime.buffer, source, msg);
+	platform_log("%s>[:%08x] %s", currtime.buffer, source, msg);
 }
 
 static void
@@ -50,14 +50,14 @@ _error(struct logger* inst, uint32_t source, const void* msg, size_t sz) {
 	fwrite(msg, sz, 1, inst->handle);
 	fprintf(inst->handle, "\n");
 	fflush(inst->handle);
-	ccp_log("%s>[:%08x] %s", currtime.buffer, source, msg);
+	platform_log("%s>[:%08x] %s", currtime.buffer, source, msg);
 }
 
 
 static void
 _reset_filename(struct logger* inst) {
 	memset(inst->filename, 0, sizeof(char) * COBWEB_MAX_PATH);
-	sprintf(inst->filename, "./%s/%s.log", inst->param, ccp_datetime("%Y%m%d").buffer);
+	sprintf(inst->filename, "./%s/%s.log", inst->param, platform_datetime("%Y%m%d").buffer);
 }
 
 static int
@@ -85,7 +85,7 @@ logger_cb(struct context_t* context,
 	return 0;
 }
 
-MOD_API int
+COBWEB_CMOD_API int
 logger_init(struct logger* inst,
 	struct context_t* ctx,
 	const char* parm) {
@@ -107,7 +107,7 @@ logger_init(struct logger* inst,
 	return 1;
 }
 
-MOD_API void
+COBWEB_CMOD_API void
 logger_signal(struct logger* inst, int signal) {
 	if (inst->filename) {
 		_reset_filename(inst);

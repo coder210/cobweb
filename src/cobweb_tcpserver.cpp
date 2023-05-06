@@ -60,7 +60,7 @@ struct tcpserver_t {
 	int serverfd; // server sockfd
 	int proto_parse; // 协议解析方式, 0: 不做任何处理, 1:字符处理, 2: 字节处理
 	struct linkedlist_t* clients; // clients
-	size_t timeout; // 超时时间/s
+	long timeout; // 超时时间/s
 };
 
 
@@ -324,7 +324,7 @@ cobweb_tcpserver_create(const char* ip, int port, int proto_parse) {
 	_evthread_use_pthreads();
 	inst->proto_parse = proto_parse;
 	struct event_base* base = event_base_new();
-	struct sockaddr_in serveraddr = ccp_sockaddr(ip, port);
+	struct sockaddr_in serveraddr = platform_sockaddr(ip, port);
 	struct evconnlistener* evconn = evconnlistener_new_bind(base,
 		_accept_cb,
 		inst,
