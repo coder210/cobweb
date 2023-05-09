@@ -1,6 +1,6 @@
 ﻿/**************************************************
 Copyright: 2021-2022, lanchong.xyz/Ltd.
-File name: cobweb_server.c
+File name: cobweb_server.cpp
 Description: 此服务器采用ctx模型,也是主要操作对象
 Author: ydlc
 Version: 1.0
@@ -10,19 +10,21 @@ History:
 #include "cobweb.h"
 #include <assert.h>
 #include <stdarg.h>
+#include <queue>
+#include <mutex>
 
 struct context_data_t {
-	void* instance; //指向模块内部的数据结构
-	struct module_t* mod;//指向module
-	void* cb_ud;//用户自定义数据，回调函数cb的参数
-	context_callback cb;//函数指针，指向模块_cb回调函数
-	struct mq_t* mq;//指向包含本handle ID的消息队列
+	void* instance;
+	struct module_t* mod;
+	void* cb_ud;
+	context_callback cb;
+	std::queue<message_t> mq;
+	std::mutex mq_mutex;
 	FILE* logfile;
-	char result[32];//主要用来保存cmd_xxx函数的操作结果
-	uint32_t handle;//本ctx的handle ID
-	int session_id; // session id
-	uint64_t starttime; // 开始时间
-	int state; // 状态
+	char result[32];
+	uint32_t handle;
+	int session_id;
+	bool exit;
 	bool endless;
 };
 
@@ -45,61 +47,46 @@ _tohandle(struct context_t* ctx, const char* param) {
 
 /* 消息分发 */
 void
-_dispatch_message(struct context_t* ctx, struct message_t* msg) {
-	//如果服务都没提供回调
-	if (ctx->_data->cb == NULL) {
-		cobweb_free(msg->data);
+_dispatch_message(struct context_t* ctx, struct message_t& msg) {
+	if (ctx->_data->cb == nullptr) {
+		cobweb_free(msg.data);
+		return;
 	}
-	else {
-		size_t sz = msg->sz;
-		if (ctx->_data->logfile) {
-			cobweb_context_log_output(ctx->_data->logfile, msg->source, msg->type, msg->session, msg->data, sz);
-		}
-		// 调用回调函数处理数据
-		if (!ctx->_data->cb(ctx, ctx->_data->cb_ud, msg->type, msg->session, msg->source, msg->data, sz)) {
-			cobweb_free(msg->data);
-		}
+	size_t sz = msg.sz;
+	if (ctx->_data->logfile) {
+		cobweb_context_log_output(ctx->_data->logfile, msg.source, msg.type, msg.session, msg.data, sz);
 	}
-
-	cobweb_free(msg);
+	if (!ctx->_data->cb(ctx, ctx->_data->cb_ud, msg.type, msg.session, msg.source, msg.data, sz)) {
+		cobweb_free(msg.data);
+	}
 }
 
-
-
-/* 动作 */
 bool
-cobweb_context_action(struct context_t* ctx, struct monitor_t* sm) {
-	bool ret = true;
-	if (ctx->_data->state == STATE_DISPATCH) {
-		struct message_t* pmsg = cobweb_mq_dq(ctx->_data->mq);
-		if (pmsg != NULL) {
-			/* 触发monitor，monitor线程会检查是不是进入死循环 */
-			cobweb_monitor_trigger(sm, pmsg->source, ctx->_data->handle);
+cobweb_dispatch_message(struct monitor_t* sm, struct context_t* ctx) {
+	if (!ctx->_data->exit) {
+		struct message_t msg = { 0 };
+		bool is_empty = false;
 
-			/* 处理消息(调用cb函数) */
-			_dispatch_message(ctx, pmsg);
+		ctx->_data->mq_mutex.lock();
+		is_empty = ctx->_data->mq.empty();
+		if (!is_empty) {
+			msg = ctx->_data->mq.front();
+			ctx->_data->mq.pop();
+		}
+		ctx->_data->mq_mutex.unlock();
 
-			/* 调用结束了，当destination为0的时候，不进行死循环检查 */
+		if (!is_empty) {
+			cobweb_monitor_trigger(sm, msg.source, ctx->_data->handle);
+			_dispatch_message(ctx, msg);
 			cobweb_monitor_trigger(sm, 0, 0);
 		}
-	}
-	else if (ctx->_data->state == STATE_EXIT) {
-		ctx->_data->state = STATE_CLEAR;
-	}
-	else if (ctx->_data->state == STATE_CLEAR) {
-		/* clear */
-		cobweb_context_log(ctx, "CLEAR");
-		cobweb_context_release(ctx);
-		ret = false;
+		return true;
 	}
 	else {
-		cobweb_context_log(ctx, ":%0x unknown state", ctx->_data->handle);
-		ctx->_data->state = STATE_EXIT;
+		cobweb_context_release(ctx);
+		return false;
 	}
-
-	return ret;
 }
-
 
 void
 cobweb_context_callback(struct context_t* ctx,
@@ -135,7 +122,7 @@ static void
 handle_exit(struct context_t* ctx, uint32_t handle) {
 	if (handle == 0) {
 		handle = ctx->_data->handle;
-		ctx->_data->state = STATE_EXIT;
+		ctx->_data->exit = true;
 		cobweb_context_log(ctx, "KILL self");
 	}
 	else {
@@ -154,7 +141,7 @@ cmd_timeout(struct context_t* ctx, const char* param) {
 	char* session_ptr = NULL;
 	int ti = strtol(param, &session_ptr, 10);
 	int session = cobweb_context_newsession(ctx);
-	cobweb_add_wheel(ctx->_data->handle, session, ti, NULL, 0);
+	cobweb_add_trigger(ctx->_data->handle, session, ti, NULL, 0);
 	memset(ctx->_data->result, 0, 32);
 	sprintf(ctx->_data->result, "%d", session);
 	return ctx->_data->result;
@@ -238,7 +225,7 @@ cmd_launch(struct context_t* ctx, const char* param) {
 	char* mod = cobweb_strsep(&args, " \t\r\n");
 	args = cobweb_strsep(&args, "\r\n");
 	struct context_t* inst = cobweb_context_new(mod, args);
-	if (inst == NULL) {
+	if (inst == nullptr) {
 		cobweb_free(tmp);
 		return NULL;
 	}
@@ -275,7 +262,6 @@ cmd_setstring(struct context_t* ctx, const char* param) {
 static const char*
 cmd_starttime(struct context_t* ctx, const char* param) {
 	memset(ctx->_data->result, 0, 32);
-	sprintf(ctx->_data->result, "%llu", ctx->_data->starttime);
 	return ctx->_data->result;
 }
 
@@ -298,7 +284,7 @@ cmd_abort(struct context_t* ctx, const char* param) {
 
 static const char*
 cmd_mqlen(struct context_t* ctx, const char* param) {
-	int len = cobweb_mq_length(ctx->_data->mq);
+	int len = ctx->_data->mq.size();
 	memset(ctx->_data->result, 0, 32);
 	sprintf(ctx->_data->result, "%d", len);
 	return ctx->_data->result;
@@ -310,7 +296,7 @@ cmd_logon(struct context_t* ctx, const char* param) {
 	if (handle == 0) {
 		return NULL;
 	}
-	struct context_t* dest_ctx = cobweb_handle_grab(handle);
+	struct context_t* dest_ctx = cobweb_handle_find(handle);
 	if (dest_ctx != NULL && dest_ctx->_data->logfile == NULL) {
 		const char* logpath = "";
 		if (logpath != NULL) {
@@ -329,7 +315,7 @@ cmd_logoff(struct context_t* ctx, const char* param) {
 	if (handle == 0) {
 		return NULL;
 	}
-	struct context_t* dest_ctx = cobweb_handle_grab(handle);
+	struct context_t* dest_ctx = cobweb_handle_find(handle);
 	if (dest_ctx != NULL && dest_ctx->_data->logfile != NULL) {
 		platform_error("Close log file :%08x", handle);
 		fprintf(dest_ctx->_data->logfile, "close time: %u\n", (uint32_t)cobweb_timestamp());
@@ -345,7 +331,7 @@ cmd_signal(struct context_t* ctx, const char* param) {
 	if (handle == 0) {
 		return NULL;
 	}
-	struct context_t* dest_ctx = cobweb_handle_grab(handle);
+	struct context_t* dest_ctx = cobweb_handle_find(handle);
 	if (dest_ctx == NULL) {
 		return NULL;
 	}
@@ -394,12 +380,15 @@ cobweb_context_command(struct context_t* ctx, const char* cmd, const char* param
 }
 
 int
-cobweb_context_push(uint32_t handle, struct message_t* message) {
-	struct context_t* ctx = cobweb_handle_grab(handle);  //增加ctx引用计数
-	if (ctx == NULL) {
+cobweb_context_push(uint32_t handle, struct message_t& msg) {
+	struct context_t* ctx = cobweb_handle_find(handle);
+	if (ctx == nullptr) {
 		return -1;
 	}
-	cobweb_mq_eq(ctx->_data->mq, message); //消息入队完成
+	ctx->_data->mq_mutex.lock();
+	ctx->_data->mq.push(msg);
+	ctx->_data->mq_mutex.unlock();
+	cobweb_monitor_wakeup();
 	return 0;
 }
 
@@ -424,27 +413,6 @@ _filter_args(struct context_t* ctx, int* type, int* session, void** data, size_t
 	}
 }
 
-/* 发送网络消息 */
-int
-cobweb_context_ssend(struct socket_message_t* socket_message) {
-	struct message_t* pmsg = (struct message_t*)cobweb_malloc(sizeof(struct message_t));
-	if (pmsg != NULL) {
-		pmsg->type = PTYPE_SOCKET;
-		pmsg->source = 0;
-		pmsg->session = 0;
-		pmsg->data = socket_message;
-		pmsg->sz = sizeof(struct socket_message_t);
-		uint32_t gate = cobweb_handle_findname("gate");
-		if (cobweb_context_push(gate, pmsg)) {
-			cobweb_free(pmsg->data);
-			cobweb_free(pmsg);
-			return 0;
-		}
-	}
-
-	return -1;
-}
-
 /* 发送消息 */
 int
 cobweb_context_send(struct context_t* ctx, uint32_t source, uint32_t dest, int type, int session, void* data, size_t sz) {
@@ -466,18 +434,14 @@ cobweb_context_send(struct context_t* ctx, uint32_t source, uint32_t dest, int t
 		return session;
 	}
 
-	struct message_t* pmsg = (struct message_t*)cobweb_malloc(sizeof(struct message_t));
-	if (pmsg) {
-		pmsg->type = type;
-		pmsg->source = source;
-		pmsg->session = session;
-		pmsg->data = data;
-		pmsg->sz = sz;
-		if (cobweb_context_push(dest, pmsg)) {
-			cobweb_free(pmsg->data);
-			cobweb_free(pmsg);
-			return -1;
-		}
+	struct message_t msg;
+	msg.type = type;
+	msg.source = source;
+	msg.session = session;
+	msg.data = data;
+	msg.sz = sz;
+	if (cobweb_context_push(dest, msg)) {
+		return -1;
 	}
 	return session;
 }
@@ -497,8 +461,8 @@ cobweb_context_sendname(struct context_t* ctx, uint32_t source, const char* addr
 	}
 	else {
 		//struct remote_message* rmsg = cobweb_malloc(sizeof(*rmsg));
-		//copy_name(rmsg->destination.name, addr);
-		//rmsg->destination.handle = 0;
+		//copy_name(rmsg->dest.name, addr);
+		//rmsg->dest.handle = 0;
 		//rmsg->message = data;
 		//rmsg->sz = sz;
 		//harbor_send(rmsg, source, session);
@@ -508,7 +472,6 @@ cobweb_context_sendname(struct context_t* ctx, uint32_t source, const char* addr
 	return cobweb_context_send(ctx, source, des, type, session, data, sz);
 }
 
-// endless
 void
 cobweb_context_endless(struct context_t* ctx) {
 	if (ctx == NULL) {
@@ -517,45 +480,40 @@ cobweb_context_endless(struct context_t* ctx) {
 	ctx->_data->endless = true;
 }
 
-// ctx
 struct context_t*
-cobweb_context_new(const char* name, const char* param) {
+	cobweb_context_new(const char* name, const char* param) {
 	struct module_t* mod = cobweb_module_query(name);
-	if (mod == NULL) {
-		return NULL;
+	if (mod == nullptr) {
+		return nullptr;
 	}
 	void* inst = cobweb_module_instance_create(mod);
-	if (inst == NULL) {
-		return NULL;
+	if (inst == nullptr) {
+		return nullptr;
 	}
 
-	struct context_data_t* private_data = (struct context_data_t*)cobweb_malloc(sizeof(struct context_data_t));
-	if (private_data == NULL) {
-		return NULL;
+	struct context_data_t* private_data = new context_data_t();
+	if (private_data == nullptr) {
+		return nullptr;
 	}
 
-	memset(private_data, 0, sizeof(struct context_data_t));
-
-	struct context_t* ctx = (struct context_t*)cobweb_malloc(sizeof(struct context_t));
-	if (ctx == NULL) {
-		cobweb_free(private_data);
-		return NULL;
+	struct context_t* ctx = new context_t();
+	if (ctx == nullptr) {
+		delete private_data;
+		return nullptr;
 	}
 
 	ctx->_data = private_data;
 	ctx->_data->mod = mod;
 	ctx->_data->instance = inst;
-	ctx->_data->cb = NULL;
-	ctx->_data->cb_ud = NULL;
+	ctx->_data->cb = nullptr;
+	ctx->_data->cb_ud = nullptr;
 	ctx->_data->session_id = 0;
-	ctx->_data->logfile = NULL;
-	ctx->_data->state = STATE_WAIT;
+	ctx->_data->logfile = nullptr;
 	ctx->_data->endless = false;
+	ctx->_data->exit = false;
 	ctx->_data->handle = cobweb_handle_register(ctx);
-	ctx->_data->starttime = cobweb_timestamp();
 
 	/* public method */
-	ctx->sserver_send = cobweb_sserver_send;
 	ctx->send = cobweb_context_send;
 	ctx->sendname = cobweb_context_sendname;
 	ctx->callback = cobweb_context_callback;
@@ -563,35 +521,30 @@ cobweb_context_new(const char* name, const char* param) {
 	ctx->log = cobweb_context_log;
 	ctx->error = cobweb_context_error;
 
-
-	struct mq_t* mq = ctx->_data->mq = cobweb_mq_create(ctx->_data->handle);
 	int r = cobweb_module_instance_init(mod, inst, ctx, param);
 	if (r == 0) {
-		ctx->_data->state = STATE_DISPATCH;
-		cobweb_globalmq_eq(mq);
+		cobweb_cq_eq(ctx);
 		return ctx;
 	}
 	else {
-		ctx->_data->state = STATE_EXIT;
-		return NULL;
+		return nullptr;
 	}
 }
 
 void
 cobweb_context_release(struct context_t* ctx) {
-	if (ctx != NULL) {
+	if (ctx != nullptr) {
 		if (ctx->_data->logfile) {
 			fclose(ctx->_data->logfile);
 		}
 		cobweb_module_instance_release(ctx->_data->mod, ctx->_data->instance);
 		cobweb_handle_retire(ctx->_data->handle);
-		cobweb_mq_release(ctx->_data->mq);
-		cobweb_free(ctx);
-		ctx = NULL;
+		delete ctx->_data;
+		delete ctx;
+		ctx = nullptr;
 	}
 }
 
-// session
 int
 cobweb_context_newsession(struct context_t* ctx) {
 	int session = ++ctx->_data->session_id;
@@ -613,30 +566,24 @@ cobweb_context_logfile(struct context_t* ctx, int type, void* data, size_t sz) {
 	if (logger == 0) {
 		return;
 	}
-
-	struct message_t* pformat = (struct message_t*)cobweb_malloc(sizeof(struct message_t));
-	if (pformat != NULL) {
-		if (ctx == NULL) {
-			pformat->source = 0;
-		}
-		else {
-			pformat->source = cobweb_context_handle(ctx);
-		}
-		pformat->session = 0;
-		pformat->data = data;
-		pformat->sz = sz;
-		pformat->type = type;
-		if (cobweb_context_push(logger, pformat)) {
-			cobweb_free(pformat->data);
-			cobweb_free(pformat);
-		}
+	struct message_t format;
+	if (ctx == nullptr) {
+		format.source = 0;
 	}
+	else {
+		format.source = cobweb_context_handle(ctx);
+	}
+	format.session = 0;
+	format.data = data;
+	format.sz = sz;
+	format.type = type;
+	cobweb_context_push(logger, format);
 }
 
 void
 cobweb_context_log(struct context_t* ctx, const char* format, ...) {
 	char tmp[COBWEB_MESSAGE_SIZE];
-	char* data = NULL;
+	char* data = nullptr;
 
 	va_list ap;
 
@@ -672,7 +619,7 @@ cobweb_context_log(struct context_t* ctx, const char* format, ...) {
 void
 cobweb_context_error(struct context_t* ctx, const char* format, ...) {
 	char tmp[COBWEB_MESSAGE_SIZE];
-	char* data = NULL;
+	char* data = nullptr;
 
 	va_list ap;
 

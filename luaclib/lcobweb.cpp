@@ -738,7 +738,6 @@ lcommand(lua_State* L) {
 	return 0;
 }
 
-// µ÷ÓÃÃüÁî
 static int
 lintcommand(lua_State* L) {
 	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
@@ -945,18 +944,6 @@ ltostring(lua_State* L) {
 }
 
 static int
-lharbor(lua_State* L) {
-	struct context_t* context = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
-	uint32_t handle = (uint32_t)luaL_checkinteger(L, 1);
-	int harbor = 0;
-	//int remote = cobweb_isremote(context, handle, &harbor);
-	int remote = 0;
-	lua_pushinteger(L, harbor);
-	lua_pushboolean(L, remote);
-	return 2;
-}
-
-static int
 lpackstring(lua_State* L) {
 	luaseri_pack(L);
 	char* str = (char*)lua_touserdata(L, -2);
@@ -980,7 +967,7 @@ ltrash(lua_State* L) {
 		break;
 	}
 	default:
-		luaL_error(L, "spider.trash invalid param %s", lua_typename(L, t));
+		luaL_error(L, "cobweb.trash invalid param %s", lua_typename(L, t));
 	}
 
 	return 0;
@@ -991,34 +978,6 @@ ltointeger(lua_State* L) {
 	int n = (int)luaL_checknumber(L, 1);
 	lua_pushinteger(L, n);
 	return 1;
-}
-
-static int
-lsocket_send(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
-	int fd = (int)luaL_checkinteger(L, 1);
-	const char* ptr = luaL_checkstring(L, 2);
-	int sz = (int)luaL_checkinteger(L, 3);
-	int n = ctx->sserver_send(fd, ptr, sz);
-	lua_pushinteger(L, n);
-	return 1;
-}
-
-static int
-lsocket_unpack(lua_State* L) {
-	struct socket_message_t* socket_message = (struct socket_message_t*)lua_touserdata(L, 1);
-	lua_pushinteger(L, socket_message->type);
-	lua_pushinteger(L, socket_message->fd);
-	if (socket_message->type == SOCKET_TYPE_DATA) {
-		lua_pushlstring(L, socket_message->buffer, socket_message->sz);
-		lua_pushinteger(L, socket_message->sz);
-	}
-	else {
-		lua_pushstring(L, "");
-		lua_pushinteger(L, 0);
-	}
-
-	return 4;
 }
 
 COBWEB_CMOD_API int
@@ -1038,18 +997,15 @@ luaopen_lcobweb(lua_State* L) {
 		{"log", llog},
 		{"packstring", lpackstring},
 		{"tostring", ltostring},
-		{"harbor", lharbor},
 		{"trash", ltrash},
 		{"tointeger", ltointeger},
-		{"socket_send", lsocket_send},
-		{"socket_unpack", lsocket_unpack},
 		{NULL, NULL}
 	};
 	luaL_newlibtable(L, l);
 
 	lua_getfield(L, LUA_REGISTRYINDEX, "__this");
 	struct context_t* ctx = (struct context_t*)lua_touserdata(L, -1);
-	if (ctx == NULL) {
+	if (ctx == nullptr) {
 		printf("Init __this first");
 		return 0;
 	}

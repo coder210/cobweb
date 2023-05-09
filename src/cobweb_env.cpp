@@ -1,6 +1,6 @@
 /************************************************
 Copyright: 2021-2022, lanchong.xyz/Ltd.
-File name: cobweb_env.c
+File name: cobweb_env.cpp
 Description: 存储变量的值
 Author: ydlc
 Version: 1.0
@@ -9,65 +9,51 @@ History:
 *************************************************/
 
 #include "cobweb.h"
-extern "C" {
-#include "lua/lapi.h"
-#include "lua/lualib.h"
-#include "lua/lauxlib.h"
-}
+#include <string>
+#include <mutex>
+#include <map>
 
-// var
 struct env_t {
-	struct mutex_t* mutex;
-	lua_State* L;
+	std::mutex mutex;
+	std::map<std::string, std::string> storage;
 };
 
 
-static struct env_t* E = NULL;
+static struct env_t* E = nullptr;
 
 
 void
 cobweb_env_init(void) {
-	E = (struct env_t*)cobweb_malloc(sizeof(struct env_t));
-	if (E != NULL) {
-		E->mutex = platform_mutex_create();
-		E->L = luaL_newstate();
-	}
+	assert(E == nullptr);
+	E = new env_t();
 }
 
 const char*
 cobweb_getenv(const char* key) {
-	platform_mutex_lock(E->mutex);
-
-	lua_State* L = E->L;
-	lua_getglobal(L, key);
-	const char* result = lua_tostring(L, -1);
-	lua_pop(L, 1);
-
-	platform_mutex_unlock(E->mutex);
-
+	const char* result = NULL;
+	E->mutex.lock();
+	auto iter = E->storage.find(key);
+	if (iter != E->storage.end()) {
+		result = iter->second.c_str();
+	}
+	E->mutex.unlock();
 	return result;
 }
 
 void
 cobweb_setenv(const char* key, const char* value) {
-	platform_mutex_lock(E->mutex);
-
-	lua_State* L = E->L;
-	lua_getglobal(L, key);
-	lua_pop(L, 1);
-	lua_pushstring(L, value);
-	lua_setglobal(L, key);
-
-	platform_mutex_unlock(E->mutex);
+	E->mutex.lock();
+	auto iter = E->storage.find(key);
+	if (iter == E->storage.end()) {
+		E->storage.insert(std::map<std::string, std::string>::value_type(key, value));
+	}
+	E->mutex.unlock();
 }
 
 void
 cobweb_env_release(void) {
-	if (E != NULL) {
-		lua_close(E->L);
-		platform_mutex_release(E->mutex);
-		cobweb_free (E);
-		E = NULL;
-	}
+	assert(E != nullptr);
+	delete E;
+	E = nullptr;
 }
 

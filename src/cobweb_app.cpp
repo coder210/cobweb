@@ -1,34 +1,4 @@
-﻿/**
-						 _ooOoo_
-						o8888888o
-						88\" . \"88
-						(| -_- |)
-					 ____/`---'\\____
-				   .'  \\|     |//  `.
-				   /  \\|||  :  |||//  \\
-				  /  _||||| -:- |||||-  \\
-				  |   | \\\\  -  /// |   |
-				 | \\_|  ''\\---/''  |   |
-				  \\  .-\\__  `-`  ___/-. /
-				 ___`. .'  /--.--\\  `. . __
-			  .\"\" '<  `.___\\_<|>_/___.'  >'\"\".
-			 | | :  `- \\`.;`\\ _ /`;.`/ - ` : | |
-		   \\  \\ `-.   \\_ __\\ /__ _/   .-` /  /
-		  =====`-.____`-.___\\_____/___.-`____.-'======
-		 `^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		 `          佛祖保佑       永无Bug
-		 `          快加工资       不改需求
-		  佛曰:
-				  写字楼里写字间，写字间里程序员；
-				  程序人员写程序，又拿程序换酒钱。
-				  酒醒只在网上坐，酒醉还来网下眠；
-				  酒醉酒醒日复日，网上网下年复年。
-				  但愿老死电脑间，不愿鞠躬老板前；
-				  奔驰宝马贵者趣，公交自行程序员。
-				  别人笑我忒疯癫，我笑自己命太贱；
-*/
-
-#include "cobweb.h"
+﻿#include "cobweb.h"
 extern "C" {
 #include "lua/lapi.h"
 #include "lua/lualib.h"
@@ -104,28 +74,17 @@ cobweb_run(const char* config_file) {
 
 	_init_env(L);
 
-	config.thread = _optint("thread", 8);
+	config.thread = _optint("thread", 1);
 	config.module_path = _optstring("cpath", "./cservice/?.so");
-	config.harbor = _optint("harbor", 1);
 	config.bootstrap = _optstring("bootstrap", "luax bootstrap");
-	config.daemon = _optstring("daemon", NULL);
 	config.logservice = _optstring("logservice", "logger");
 	config.address = _optstring("address", "");
 	config.master = _optstring("master", "");
-	config.afterend = _optint("afterend", 1);
-	config.proto_parse = _optint("parse", 1);
 
 	lua_close(L);
 
 	char tmp[COBWEB_MAX_PATH] = { 0 };
 	cobweb_setenv("absolut_path", platform_root_dir(tmp, COBWEB_MAX_PATH));
-
-	/* init daemon */
-	if (config.daemon) {
-		if (platform_daemon_init(config.daemon)) {
-			return 1;
-		}
-	}
 
 	/* init network */
 	platform_network_init();
@@ -135,11 +94,6 @@ cobweb_run(const char* config_file) {
 
 	/* release network */
 	platform_network_release();
-
-	/* exit daemon */
-	if (config.daemon) {
-		platform_daemon_exit(config.daemon);
-	}
 
 	return 0;
 }

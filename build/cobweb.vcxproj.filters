@@ -4,16 +4,13 @@
     <ClCompile Include="E:\github\cobweb\src\cobweb_app.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\github\cobweb\src\cobweb_cq.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_env.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_handle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="E:\github\cobweb\src\cobweb_infra.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="E:\github\cobweb\src\cobweb_kcpserver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_main.cpp">
@@ -25,19 +22,10 @@
     <ClCompile Include="E:\github\cobweb\src\cobweb_monitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="E:\github\cobweb\src\cobweb_mq.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="E:\github\cobweb\src\cobweb_network.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_start.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="E:\github\cobweb\src\cobweb_tcpserver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\github\cobweb\src\cobweb_timer.cpp">

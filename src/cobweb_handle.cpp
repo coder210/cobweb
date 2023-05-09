@@ -10,142 +10,105 @@ History:
 
 #include "cobweb.h"
 #include <assert.h>
+#include <map>
+#include <mutex>
 
 
-// reserve high 8 bits for remote id
-#define HANDLE_MASK 0xffffff
-#define HANDLE_REMOTE_SHIFT 24
-#define DEFAULT_SLOT_SIZE 1024
-#define MAX_NAME_SIZE 32
-
-
-//名字服务结构，一个名字对应一个handle
-struct handle_name_t {
-	char name[MAX_NAME_SIZE]; //服务名字
-	uint32_t handle; //服务ID，下面以handle来称呼
-};
-
-
-//保存handle/name列表的数据结构，skynet_handle_init会初始化它
 struct handle_storage_t {
-	struct mutex_t* mutex;
-	uint32_t harbor; //harbor!!
-	uint32_t handle_index;  //必须从1开始
-	size_t slot_size; //数组长度
-	struct context_t** slot;  //数组，实际上里面存的是服务的上下文
-	struct handle_name_t* name;  //数组
+	std::mutex mutex;
+	uint32_t handle_index;
+	std::map<uint32_t, struct context_t*> ctx_slot;
+	std::map<uint32_t, std::string> name_slot;
 };
 
 
-static struct handle_storage_t* H = NULL;
+static struct handle_storage_t* H = nullptr;
 
 
 uint32_t
 cobweb_handle_register(struct context_t* ctx) {
 	uint32_t handle = 0;
-	platform_mutex_lock(H->mutex);
+	H->mutex.lock();
 	handle = H->handle_index++;
-	H->slot[handle] = ctx;
-	platform_mutex_unlock(H->mutex);
+	H->ctx_slot.insert(std::map<uint32_t, struct context_t*>::value_type(handle, ctx));
+	H->mutex.unlock();
 	return handle;
 }
 
 int
 cobweb_handle_retire(uint32_t handle) {
-	struct context_t* ctx = H->slot[handle];
-	if (ctx == NULL) {
+	auto iter = H->ctx_slot.find(handle);
+	if (iter == H->ctx_slot.end()) {
 		return 1;
 	}
-
-	platform_mutex_lock(H->mutex);
-	H->slot[handle] = NULL;
-	H->name[handle].handle = 0;
-	memset(H->name[handle].name, 0, MAX_NAME_SIZE);
-	platform_mutex_unlock(H->mutex);
-
+	H->mutex.lock();
+	H->ctx_slot.erase(handle);
+	H->name_slot.erase(handle);
+	H->mutex.unlock();
 	return 0;
 }
 
 struct context_t*
-cobweb_handle_grab(uint32_t handle) {
-	struct context_t* ctx = H->slot[handle];
-	if (ctx != NULL && cobweb_context_handle(ctx) == handle) {
-		return ctx;
+	cobweb_handle_find(uint32_t handle) {
+	auto iter = H->ctx_slot.find(handle);
+	if (iter != H->ctx_slot.end() && cobweb_context_handle(iter->second) == handle) {
+		return iter->second;
 	}
 	else {
-		return NULL;
+		return nullptr;
 	}
 }
 
 void
 cobweb_handle_retireall() {
-	for (size_t i = 0; i < H->slot_size; i++) {
-		H->slot[i] = NULL;
-		H->name[i].handle = 0;
-		memset(H->name[i].name, 0, MAX_NAME_SIZE);
-	}
+	H->mutex.lock();
+	H->ctx_slot.clear();
+	H->name_slot.clear();
+	H->mutex.unlock();
 }
 
 uint32_t
 cobweb_handle_findname(const char* name) {
 	uint32_t handle = 0;
 
-	platform_mutex_lock(H->mutex);
-
-	int n = (int)H->handle_index;
-	for (int i = 0; i < n; i++) {
-		struct handle_name_t* n = &H->name[i];
-		int c = strcmp(n->name, name);
-		if (c == 0) {
-			handle = n->handle;
-			break;
+	H->mutex.lock();
+	auto iter = H->name_slot.begin();
+	while (iter != H->name_slot.end()) {
+		if (iter->second.compare(name) == 0) {
+			handle = iter->first;
 		}
+		iter++;
 	}
-
-	platform_mutex_unlock(H->mutex);
+	H->mutex.unlock();
 
 	return handle;
 }
 
-static const char*
-_insert_name(struct handle_storage_t* h, const char* name, uint32_t handle) {
-	char* result = cobweb_strdup(name);
-	h->name[handle].handle = handle;
-	strcpy(h->name[handle].name, result);
-	return result;
-}
-
 const char*
 cobweb_handle_namehandle(uint32_t handle, const char* name) {
-	platform_mutex_lock(H->mutex);
-	const char* ret = _insert_name(H, name, handle);
-	platform_mutex_unlock(H->mutex);
+	const char* ret = NULL;
+	H->mutex.lock();
+	auto item = H->name_slot.insert(std::map<uint32_t, std::string>::value_type(handle, name));
+	if (item.second) {
+		ret = item.first->second.c_str();
+	}
+	H->mutex.unlock();
 	return ret;
 }
 
 void
-cobweb_handle_init(int harbor) {
-	H = (struct handle_storage_t*)cobweb_malloc(sizeof(struct handle_storage_t));
-	assert(H != NULL);
-	H->slot_size = DEFAULT_SLOT_SIZE;
-	H->slot = (struct context_t**)cobweb_malloc(H->slot_size * sizeof(struct context_t*));
-	assert(H->slot != NULL);
-	memset(H->slot, 0, H->slot_size * sizeof(struct context_t*));
-	H->mutex = platform_mutex_create();
-	H->harbor = (uint32_t)(harbor & 0xff) << HANDLE_REMOTE_SHIFT;
-	/* zero is logger handle */
+cobweb_handle_init(void) {
+	assert(H == nullptr);
+	H = new handle_storage_t();
+	assert(H != nullptr);
 	H->handle_index = 1;
-	H->name = (handle_name_t*)cobweb_malloc(H->slot_size * sizeof(struct handle_name_t));
 }
 
 void
 cobweb_handle_release() {
-	assert(H != NULL);
+	assert(H != nullptr);
 	cobweb_handle_retireall();
-	cobweb_free (H->slot);
-	cobweb_free (H->name);
-	platform_mutex_release(H->mutex);
-	cobweb_free (H);
-	H = NULL;
+	delete H;
+	H = nullptr;
 }
 
