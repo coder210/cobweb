@@ -156,8 +156,9 @@ function suspend(co, result, command, param, size)
 		end
 		session_response[co] = true
 		local ret
+		local session
 		if not dead_service[co_address] then
-			ret = c.send(co_address, cobweb.PTYPE_RESPONSE, co_session, param, size) ~= nil
+			ret, session = c.send(co_address, cobweb.PTYPE_RESPONSE, co_session, param, size)
 			if not ret then
 				-- If the package is too large, returns nil. so we should report error back
 				c.send(co_address, cobweb.PTYPE_ERROR, co_session, "")
@@ -166,7 +167,7 @@ function suspend(co, result, command, param, size)
 			c.trash(param, size)
 			ret = false
 		end
-		return suspend(co, coroutine_resume(co, ret))
+		return suspend(co, coroutine_resume(co, session))
 	elseif command == "RESPONSE" then
 		local co_session = session_coroutine_id[co]
 		local co_address = session_coroutine_address[co]
@@ -193,15 +194,16 @@ function suspend(co, result, command, param, size)
 			end
 
 			local ret
+            local session
 			if not dead_service[co_address] then
 				if ok then
-					ret = c.send(co_address, cobweb.PTYPE_RESPONSE, co_session, f(...)) ~= nil
+					ret, session = c.send(co_address, cobweb.PTYPE_RESPONSE, co_session, f(...))
 					if not ret then
 						-- If the package is too large, returns false. so we should report error back
 						c.send(co_address, cobweb.PTYPE_ERROR, co_session, "")
 					end
 				else
-					ret = c.send(co_address, cobweb.PTYPE_ERROR, co_session, "") ~= nil
+					ret, session = c.send(co_address, cobweb.PTYPE_ERROR, co_session, "") ~= nil
 				end
 			else
 				ret = false
@@ -280,12 +282,12 @@ function cobweb.exit()
 	coroutine_yield "QUIT"
 end
 
-function cobweb.getstring(key)
-	return c.command("GETSTRING",key)
+function cobweb.getenv(key)
+	return c.command("GETENV",key)
 end
 
-function cobweb.setstring(key, value)
-	c.command("SETSTRING",key .. " " ..value)
+function cobweb.setenv(key, value)
+	c.command("SETENV",key .. " " ..value)
 end
 
 cobweb.genid = assert(c.genid)
@@ -309,8 +311,8 @@ end
 
 function cobweb.call(addr, typename, ...)
 	local p = proto[typename]
-	local session = c.send(addr, p.id , nil , p.pack(...))
-	if session == nil then
+	local ret, session = c.send(addr, p.id , nil , p.pack(...))
+	if not ret then
 		error("call to invalid address " .. cobweb.address(addr))
 	end
 	return p.unpack(yield_call(addr, session))
@@ -318,7 +320,8 @@ end
 
 function cobweb.rawcall(addr, typename, msg, sz)
 	local p = proto[typename]
-	local session = assert(c.send(addr, p.id , nil , msg, sz), "call to invalid address")
+	local ret, session = c.send(addr, p.id , nil , msg, sz)
+	assert(ret, "call to invalid address")
 	return yield_call(addr, session)
 end
 

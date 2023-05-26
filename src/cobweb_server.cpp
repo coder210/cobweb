@@ -8,670 +8,368 @@ Date: 2021.12.12
 History:
 ****************************************************/
 #include "cobweb.h"
-#include <assert.h>
-#include <stdarg.h>
-#include <queue>
+#include <map>
 #include <mutex>
+#include <cassert>
+#include <cstring>
+#include "handle.h"
+#include "monitor.h"
+#include "platform.h"
+#include "utils.h"
+#include "env.h"
+#include "timer.h"
 
-struct context_data_t {
-	void* instance;
-	struct module_t* mod;
-	void* cb_ud;
-	context_callback cb;
-	std::queue<message_t> mq;
-	std::mutex mq_mutex;
-	FILE* logfile;
-	char result[32];
-	uint32_t handle;
-	int session_id;
-	bool exit;
-	bool endless;
+
+#define MAX_BUFFER 512;
+
+
+using command_func = std::string(*)(Context*, std::string);
+
+
+struct ContextData {
+	void* instance_;
+	void* cb_ud_;
+	Module* mod_;
+	MQ mq_;
+	context_callback cb_;
+	FILE* logfile_;
+	std::string result_;
+	uint32_t handle_;
+	int session_;
+	bool endless_;
+	std::map<std::string, command_func> funcs_;
 };
 
-static uint32_t
-_tohandle(struct context_t* ctx, const char* param) {
-	uint32_t handle = 0;
-	if (param[0] == ':') {
-		handle = strtoul(param + 1, NULL, 16);
-	}
-	else if (param[0] == '.') {
-		handle = cobweb_handle_findname(param + 1);
-	}
-	else {
-		cobweb_context_error(ctx, "Can't convert %s to handle", param);
-	}
-
-	return handle;
-}
-
-
-/* 消息分发 */
-void
-_dispatch_message(struct context_t* ctx, struct message_t& msg) {
-	if (ctx->_data->cb == nullptr) {
-		cobweb_free(msg.data);
-		return;
-	}
-	size_t sz = msg.sz;
-	if (ctx->_data->logfile) {
-		cobweb_context_log_output(ctx->_data->logfile, msg.source, msg.type, msg.session, msg.data, sz);
-	}
-	if (!ctx->_data->cb(ctx, ctx->_data->cb_ud, msg.type, msg.session, msg.source, msg.data, sz)) {
-		cobweb_free(msg.data);
-	}
-}
-
-bool
-cobweb_dispatch_message(struct monitor_t* sm, struct context_t* ctx) {
-	if (!ctx->_data->exit) {
-		struct message_t msg = { 0 };
-		bool is_empty = false;
-
-		ctx->_data->mq_mutex.lock();
-		is_empty = ctx->_data->mq.empty();
-		if (!is_empty) {
-			msg = ctx->_data->mq.front();
-			ctx->_data->mq.pop();
-		}
-		ctx->_data->mq_mutex.unlock();
-
-		if (!is_empty) {
-			cobweb_monitor_trigger(sm, msg.source, ctx->_data->handle);
-			_dispatch_message(ctx, msg);
-			cobweb_monitor_trigger(sm, 0, 0);
-		}
-		return true;
-	}
-	else {
-		cobweb_context_release(ctx);
-		return false;
-	}
-}
-
-void
-cobweb_context_callback(struct context_t* ctx,
-	void* ud, context_callback cb) {
-	ctx->_data->cb_ud = ud;
-	ctx->_data->cb = cb;
+std::string
+ContextSystem::Version() {
+	return std::string("v1.0.0");
 }
 
 uint32_t
-cobweb_context_queryname(struct context_t* ctx, const char* name) {
-	switch (name[0]) {
-	case ':':
-		return strtoul(name + 1, NULL, 16);
-	case '.':
-		return cobweb_handle_findname(name + 1);
-	}
-	platform_error("Don't support query global name %s", name);
-	return 0;
+ContextSystem::get_handle(Context* ctx) {
+	return ctx->data_->handle_;
 }
 
-static void
-id_to_hex(char* str, uint32_t id) {
-	int i;
-	static char hex[16] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
-	str[0] = ':';
-	for (i = 0; i < 8; i++) {
-		str[i + 1] = hex[(id >> ((7 - i) * 4)) & 0xf];
-	}
-	str[9] = '\0';
-}
-
-static void
-handle_exit(struct context_t* ctx, uint32_t handle) {
-	if (handle == 0) {
-		handle = ctx->_data->handle;
-		ctx->_data->exit = true;
-		cobweb_context_log(ctx, "KILL self");
-	}
-	else {
-		cobweb_context_log(ctx, "KILL :%0x", handle);
-	}
-}
-
-// 命令函数
-struct command_func {
-	const char* name;
-	const char* (*func)(struct context_t* ctx, const char* param);
-};
-
-static const char*
-cmd_timeout(struct context_t* ctx, const char* param) {
-	char* session_ptr = NULL;
-	int ti = strtol(param, &session_ptr, 10);
-	int session = cobweb_context_newsession(ctx);
-	cobweb_add_trigger(ctx->_data->handle, session, ti, NULL, 0);
-	memset(ctx->_data->result, 0, 32);
-	sprintf(ctx->_data->result, "%d", session);
-	return ctx->_data->result;
-}
-
-static const char*
-cmd_reg(struct context_t* ctx, const char* param) {
-	if (param == NULL || param[0] == '\0') {
-		memset(ctx->_data->result, 0, 32);
-		sprintf(ctx->_data->result, ":%x", ctx->_data->handle);
-		return ctx->_data->result;
-	}
-	else if (param[0] == '.') {
-		return cobweb_handle_namehandle(ctx->_data->handle, param + 1);
-	}
-	else {
-		platform_error("Can't register global name %s in C", param);
-		return NULL;
-	}
-}
-
-static const char*
-cmd_query(struct context_t* ctx, const char* param) {
-	if (param[0] == '.') {
-		uint32_t handle = cobweb_handle_findname(param + 1);
-		if (handle) {
-			memset(ctx->_data->result, 0, 32);
-			sprintf(ctx->_data->result, ":%x", handle);
-			return ctx->_data->result;
-		}
-	}
-	return NULL;
-}
-
-static const char*
-cmd_name(struct context_t* ctx, const char* param) {
-	size_t size = strlen(param);
-	char* name = (char*)cobweb_malloca(size + 1);
-	char* handle = (char*)cobweb_malloca(size + 1);
-	if (name == NULL || handle == NULL) {
-		return NULL;
-	}
-	sscanf(param, "%s %s", name, handle);
-	if (handle[0] != ':') {
-		return NULL;
-	}
-	uint32_t handle_id = strtoul(handle + 1, NULL, 16);
-	if (handle_id == 0) {
-		return NULL;
-	}
-	if (name[0] == '.') {
-		const char* result = cobweb_handle_namehandle(handle_id, name + 1);
-		return result;
-	}
-	else {
-		platform_error("Can't set global name %s in C", name);
-		return NULL;
-	}
-}
-
-static const char*
-cmd_exit(struct context_t* ctx, const char* param) {
-	handle_exit(ctx, 0);
-	return NULL;
-}
-
-static const char*
-cmd_kill(struct context_t* ctx, const char* param) {
-	uint32_t handle = _tohandle(ctx, param);
-	if (handle) {
-		handle_exit(ctx, handle);
-	}
-	return NULL;
-}
-
-
-static const char*
-cmd_launch(struct context_t* ctx, const char* param) {
-	char* tmp = cobweb_strdup(param);
-	char* args = tmp;
-	char* mod = cobweb_strsep(&args, " \t\r\n");
-	args = cobweb_strsep(&args, "\r\n");
-	struct context_t* inst = cobweb_context_new(mod, args);
-	if (inst == nullptr) {
-		cobweb_free(tmp);
-		return NULL;
-	}
-	else {
-		cobweb_free(tmp);
-		id_to_hex(inst->_data->result, inst->_data->handle);
-		return inst->_data->result;
-	}
-}
-
-static const char*
-cmd_getstring(struct context_t* ctx, const char* param) {
-	return cobweb_getenv(param);
-}
-
-static const char*
-cmd_setstring(struct context_t* ctx, const char* param) {
-	char* key = cobweb_strdup(param);
-	int i;
-	for (i = 0; param[i] != ' ' && param[i]; i++) {
-		key[i] = param[i];
-	}
-	if (param[i] == '\0') {
-		return NULL;
-	}
-
-	key[i] = '\0';
-	param += i + 1;
-
-	cobweb_setenv(key, param);
-	return NULL;
-}
-
-static const char*
-cmd_starttime(struct context_t* ctx, const char* param) {
-	memset(ctx->_data->result, 0, 32);
-	return ctx->_data->result;
-}
-
-static const char*
-cmd_endless(struct context_t* ctx, const char* param) {
-	if (ctx->_data->endless) {
-		memset(ctx->_data->result, 0, 32);
-		strcpy(ctx->_data->result, "1");
-		ctx->_data->endless = false;
-		return ctx->_data->result;
-	}
-	return NULL;
-}
-
-static const char*
-cmd_abort(struct context_t* ctx, const char* param) {
-
-	return NULL;
-}
-
-static const char*
-cmd_mqlen(struct context_t* ctx, const char* param) {
-	int len = ctx->_data->mq.size();
-	memset(ctx->_data->result, 0, 32);
-	sprintf(ctx->_data->result, "%d", len);
-	return ctx->_data->result;
-}
-
-static const char*
-cmd_logon(struct context_t* ctx, const char* param) {
-	uint32_t handle = _tohandle(ctx, param);
-	if (handle == 0) {
-		return NULL;
-	}
-	struct context_t* dest_ctx = cobweb_handle_find(handle);
-	if (dest_ctx != NULL && dest_ctx->_data->logfile == NULL) {
-		const char* logpath = "";
-		if (logpath != NULL) {
-			size_t sz = strlen(logpath);
-			char* tmp = (char*)cobweb_malloca(sz + 16);
-			sprintf(tmp, "%s/%08x.log", logpath, handle);
-			dest_ctx->_data->logfile = fopen(tmp, "ab");
-		}
-	}
-	return NULL;
-}
-
-static const char*
-cmd_logoff(struct context_t* ctx, const char* param) {
-	uint32_t handle = _tohandle(ctx, param);
-	if (handle == 0) {
-		return NULL;
-	}
-	struct context_t* dest_ctx = cobweb_handle_find(handle);
-	if (dest_ctx != NULL && dest_ctx->_data->logfile != NULL) {
-		platform_error("Close log file :%08x", handle);
-		fprintf(dest_ctx->_data->logfile, "close time: %u\n", (uint32_t)cobweb_timestamp());
-		fclose(dest_ctx->_data->logfile);
-		dest_ctx->_data->logfile = NULL;
-	}
-	return NULL;
-}
-
-static const char*
-cmd_signal(struct context_t* ctx, const char* param) {
-	uint32_t handle = _tohandle(ctx, param);
-	if (handle == 0) {
-		return NULL;
-	}
-	struct context_t* dest_ctx = cobweb_handle_find(handle);
-	if (dest_ctx == NULL) {
-		return NULL;
-	}
-	param = strchr(param, ' ');
-	int sig = 0;
-	if (param) {
-		sig = strtol(param, NULL, 0);
-	}
-	// NOTICE: the signal function should be thread safe.
-	cobweb_module_instance_signal(ctx->_data->mod, ctx->_data->instance, sig);
-	return NULL;
-}
-
-
-static struct command_func cmd_funcs[] = {
-	{ "TIMEOUT", cmd_timeout },
-	{ "REG", cmd_reg },
-	{ "QUERY", cmd_query },
-	{ "NAME", cmd_name },
-	{ "EXIT", cmd_exit },
-	{ "KILL", cmd_kill },
-	{ "LAUNCH", cmd_launch },
-	{ "GETSTRING", cmd_getstring },
-	{ "SETSTRING", cmd_setstring },
-	{ "STARTTIME", cmd_starttime },
-	{ "ENDLESS", cmd_endless },
-	{ "ABORT", cmd_abort },
-	{ "MQLEN", cmd_mqlen },
-	{ "LOGON", cmd_logon },
-	{ "LOGOFF", cmd_logoff },
-	{ "SIGNAL", cmd_signal },
-	{ NULL, NULL },
-};
-
-const char*
-cobweb_context_command(struct context_t* ctx, const char* cmd, const char* param) {
-	struct command_func* method = &cmd_funcs[0];
-	while (method->name) {
-		if (strcmp(cmd, method->name) == 0) {
-			return method->func(ctx, param);
-		}
-		++method;
-	}
-
-	return NULL;
-}
-
-int
-cobweb_context_push(uint32_t handle, struct message_t& msg) {
-	struct context_t* ctx = cobweb_handle_find(handle);
-	if (ctx == nullptr) {
-		return -1;
-	}
-	ctx->_data->mq_mutex.lock();
-	ctx->_data->mq.push(msg);
-	ctx->_data->mq_mutex.unlock();
-	cobweb_monitor_wakeup();
-	return 0;
-}
-
-static void
-_filter_args(struct context_t* ctx, int* type, int* session, void** data, size_t sz) {
-	int needcopy = !(*type & PTYPE_TAG_DONTCOPY);
-	int allocsession = *type & PTYPE_TAG_ALLOCSESSION;
-	*type &= 0xff; // 去掉tag
-
-	if (allocsession) {
-		assert(*session == 0);
-		*session = cobweb_context_newsession(ctx);
-	}
-
-	if (needcopy && *data) {
-		char* msg = (char*)cobweb_malloc(sz + 1);
-		if (msg != NULL) {
-			memcpy(msg, *data, sz);
-			msg[sz] = 0;
-		}
-		*data = msg;
-	}
-}
-
-/* 发送消息 */
-int
-cobweb_context_send(struct context_t* ctx, uint32_t source, uint32_t dest, int type, int session, void* data, size_t sz) {
-	if (sz > COBWEB_MAX_SIZE) {
-		cobweb_context_log(ctx, "The message to %x is too large", dest);
-		if ((type & PTYPE_TAG_DONTCOPY) == PTYPE_TAG_DONTCOPY) {
-			cobweb_free(data);
-		}
-		return -1;
-	}
-
-	_filter_args(ctx, &type, &session, (void**)&data, sz);
-
-	if (source == 0) {
-		source = ctx->_data->handle;
-	}
-
-	if (dest == 0) {
-		return session;
-	}
-
-	struct message_t msg;
-	msg.type = type;
-	msg.source = source;
-	msg.session = session;
-	msg.data = data;
-	msg.sz = sz;
-	if (cobweb_context_push(dest, msg)) {
-		return -1;
-	}
-	return session;
-}
-
-int
-cobweb_context_sendname(struct context_t* ctx, uint32_t source, const char* addr, int type, int session, void* data, size_t sz) {
-	if (source == 0) {
-		source = ctx->_data->handle;
-	}
-	uint32_t des = 0;
-
-	if (addr[0] == ':') {
-		des = strtoul(addr + 1, NULL, 16);
-	}
-	else if (addr[0] == '.') {
-		des = cobweb_handle_findname(addr + 1);
-	}
-	else {
-		//struct remote_message* rmsg = cobweb_malloc(sizeof(*rmsg));
-		//copy_name(rmsg->dest.name, addr);
-		//rmsg->dest.handle = 0;
-		//rmsg->message = data;
-		//rmsg->sz = sz;
-		//harbor_send(rmsg, source, session);
-		return session;
-	}
-
-	return cobweb_context_send(ctx, source, des, type, session, data, sz);
-}
-
-void
-cobweb_context_endless(struct context_t* ctx) {
-	if (ctx == NULL) {
-		return;
-	}
-	ctx->_data->endless = true;
-}
-
-struct context_t*
-	cobweb_context_new(const char* name, const char* param) {
-	struct module_t* mod = cobweb_module_query(name);
+Context*
+ContextSystem::New(std::string name, std::string param) {
+	Module* mod = ModuleSystem::Query(name);
 	if (mod == nullptr) {
 		return nullptr;
 	}
-	void* inst = cobweb_module_instance_create(mod);
+	void* inst = ModuleSystem::InstanceCreate(mod);
 	if (inst == nullptr) {
 		return nullptr;
 	}
 
-	struct context_data_t* private_data = new context_data_t();
-	if (private_data == nullptr) {
-		return nullptr;
-	}
+	Context* ctx = new Context();
+	ctx->data_ = new ContextData();
+	ctx->data_->handle_ = HandleSystem::Register(ctx);
+	ctx->data_->instance_ = inst;
+	ctx->data_->mod_ = mod;
+	ctx->data_->result_ = "";
+	ctx->data_->logfile_ = nullptr;
+	ctx->data_->endless_ = false;
+	ctx->data_->session_ = 0;
+	ctx->data_->cb_ = nullptr;
+	ctx->data_->cb_ud_ = nullptr;
 
-	struct context_t* ctx = new context_t();
-	if (ctx == nullptr) {
-		delete private_data;
-		return nullptr;
-	}
+	ctx->data_->funcs_.insert({ "REG", ContextSystem::CMD_REG });
+	ctx->data_->funcs_.insert({ "QUERY", ContextSystem::CMD_QUERY });
+	ctx->data_->funcs_.insert({ "NAME", ContextSystem::CMD_NAME });
+	ctx->data_->funcs_.insert({ "GETENV", ContextSystem::CMD_GETENV });
+	ctx->data_->funcs_.insert({ "EXIT", ContextSystem::CMD_EXIT });
+	ctx->data_->funcs_.insert({ "KILL", ContextSystem::CMD_KILL });
+	ctx->data_->funcs_.insert({ "LAUNCH", ContextSystem::CMD_LAUNCH });
+	ctx->data_->funcs_.insert({ "TIMEOUT", ContextSystem::CMD_TIMEOUT });
 
-	ctx->_data = private_data;
-	ctx->_data->mod = mod;
-	ctx->_data->instance = inst;
-	ctx->_data->cb = nullptr;
-	ctx->_data->cb_ud = nullptr;
-	ctx->_data->session_id = 0;
-	ctx->_data->logfile = nullptr;
-	ctx->_data->endless = false;
-	ctx->_data->exit = false;
-	ctx->_data->handle = cobweb_handle_register(ctx);
+	ctx->callback = ContextSystem::Callback;
+	ctx->command = ContextSystem::Command;
+	ctx->info = PlatformSystem::info;
+	ctx->debug = PlatformSystem::debug;
+	ctx->error = PlatformSystem::error;
+	ctx->log = ContextSystem::Log;
+	ctx->log_error = ContextSystem::LogError;
+	ctx->timestamp = UtilsSystem::Timestamp;
+	ctx->current_datetime = UtilsSystem::CurrentDatetime;
+	ctx->timeout = TimerSystem::Timeout;
+	ctx->get_handle = ContextSystem::get_handle;
+	ctx->push = ContextSystem::Push;
+	ctx->send = ContextSystem::Send;
+	ctx->sendname = ContextSystem::Sendname;
+	ctx->newsession = ContextSystem::NewSession;
 
-	/* public method */
-	ctx->send = cobweb_context_send;
-	ctx->sendname = cobweb_context_sendname;
-	ctx->callback = cobweb_context_callback;
-	ctx->command = cobweb_context_command;
-	ctx->log = cobweb_context_log;
-	ctx->error = cobweb_context_error;
-
-	int r = cobweb_module_instance_init(mod, inst, ctx, param);
-	if (r == 0) {
-		cobweb_cq_eq(ctx);
-		return ctx;
+	if (ModuleSystem::InstanceInit(mod, inst, ctx, param)) {
+		HandleSystem::Enqueue(ctx->data_->handle_);
 	}
 	else {
-		return nullptr;
+		ContextSystem::Release(ctx);
+		ctx = nullptr;
 	}
+
+	return ctx;
 }
 
 void
-cobweb_context_release(struct context_t* ctx) {
-	if (ctx != nullptr) {
-		if (ctx->_data->logfile) {
-			fclose(ctx->_data->logfile);
+ContextSystem::Release(Context* ctx) {
+	assert(ctx->data_ != nullptr);
+	assert(ctx != nullptr);
+	HandleSystem::Retire(ctx->data_->handle_);
+	delete ctx->data_;
+	delete ctx;
+	ctx = nullptr;
+}
+
+void
+ContextSystem::Log(uint32_t source, const char* format, ...) {
+	uint32_t logger = HandleSystem::FindHandle(".logger");
+	Context* ctx = HandleSystem::FindContext(logger);
+	if (ctx == nullptr) {
+		return;
+	}
+	std::string str;
+	va_list ap;
+	va_start(ap, format);
+	int length = _vscprintf(format, ap) + 1;
+	std::vector<char> char_vector(length);
+	_vsnprintf(char_vector.data(), length, format, ap);
+	str.assign(char_vector.data());
+	va_end(ap);
+	ContextSystem::Push(ctx, source, PTYPE_TEXT | PTYPE_TAG_STRING, 0, str.c_str(), str.size());
+}
+
+void
+ContextSystem::LogError(uint32_t source, const char* format, ...) {
+	uint32_t logger = HandleSystem::FindHandle(".logger");
+	Context* ctx = HandleSystem::FindContext(logger);
+	if (ctx == nullptr) {
+		return;
+	}
+	std::string str;
+	va_list ap;
+	va_start(ap, format);
+	int length = _vscprintf(format, ap) + 1;
+	std::vector<char> char_vector(length);
+	_vsnprintf(char_vector.data(), length, format, ap);
+	str.assign(char_vector.data());
+	va_end(ap);
+	ContextSystem::Push(ctx, source, PTYPE_ERROR | PTYPE_TAG_STRING, 0, str.c_str(), str.size());
+}
+
+void
+ContextSystem::DispatchMessage(Context* ctx, int mid) {
+	ContextData* ctx_data = ctx->data_;
+	if (ctx_data->cb_ == nullptr) {
+		return;
+	}
+	Message msg;
+	if (!MQSystem::Dequeue(&ctx_data->mq_, &msg)) {
+		return;
+	}
+	MonitorSystem::Trigger(mid, msg.source_, ctx_data->handle_);
+	if (ctx_data->cb_ != nullptr) {
+		if (ctx_data->logfile_) {
+
 		}
-		cobweb_module_instance_release(ctx->_data->mod, ctx->_data->instance);
-		cobweb_handle_retire(ctx->_data->handle);
-		delete ctx->_data;
-		delete ctx;
-		ctx = nullptr;
+		if (!ctx_data->cb_(ctx, ctx_data->cb_ud_, msg.type_, msg.session_, msg.source_, msg.data_, msg.sz_)) {
+			free(msg.data_);
+		}
+	}
+	MonitorSystem::Trigger(mid, 0, 0);
+}
+
+bool
+ContextSystem::Push(Context* ctx, uint32_t source, int type, int session, const void* data, size_t sz) {
+	if ((type & PTYPE_TAG_STRING) != 0) {
+		char* tmp = (char*)malloc(sz + 1);
+		if (tmp == nullptr) {
+			return false;
+		}
+		memcpy_s(tmp, sz, data, sz);
+		tmp[sz] = 0;
+		data = tmp;
+	}
+	else if ((type & PTYPE_TAG_USERDATA) != 0) {
+		void* tmp = malloc(sz);
+		if (tmp == nullptr) {
+			return false;
+		}
+		memcpy_s(tmp, sz, data, sz);
+		data = tmp;
+	}
+	Message msg;
+	msg.source_ = source;
+	msg.type_ = type & 0xff;
+	msg.session_ = session;
+	msg.data_ = (void*)data;
+	msg.sz_ = sz;
+	MQSystem::Enqueue(&ctx->data_->mq_, msg);
+	MonitorSystem::Wakeup();
+	return true;
+}
+
+bool
+ContextSystem::Send(uint32_t source, uint32_t dest, int type, int session, const void* data, size_t sz) {
+	Context* source_ctx = HandleSystem::FindContext(source);
+	if (source_ctx == nullptr) {
+		return false;
+	}
+	Context* dest_ctx = HandleSystem::FindContext(dest);
+	if (dest_ctx == nullptr) {
+		return false;
+	}
+	bool ret = ContextSystem::Push(dest_ctx, source, type, session, data, sz);
+	return ret;
+}
+
+bool
+ContextSystem::Sendname(uint32_t source, std::string dest_name, int type, int session, const void* data, size_t sz) {
+	Context* source_ctx = HandleSystem::FindContext(source);
+	if (source_ctx == nullptr) {
+		return false;
+	}
+	uint32_t dest = HandleSystem::FindHandle(dest_name);
+	if (dest == 0) {
+		return false;
+	}
+	Context* dest_ctx = HandleSystem::FindContext(dest);
+	if (dest_ctx == nullptr) {
+		return false;
+	}
+	bool ret = ContextSystem::Push(dest_ctx, source, type, session, data, sz);
+	return ret;
+}
+
+void
+ContextSystem::Callback(Context* ctx, void* ud, context_callback cb) {
+	ctx->data_->cb_ud_ = ud;
+	ctx->data_->cb_ = cb;
+}
+
+std::string
+ContextSystem::Command(Context* ctx, std::string cmd, std::string param) {
+	auto iter = ctx->data_->funcs_.find(cmd);
+	if (iter != ctx->data_->funcs_.end()) {
+		ctx->data_->result_ = iter->second(ctx, param);
+		return ctx->data_->result_;
+	}
+	else {
+		return "0";
 	}
 }
 
 int
-cobweb_context_newsession(struct context_t* ctx) {
-	int session = ++ctx->_data->session_id;
-	if (session <= 0) {
-		ctx->_data->session_id = 1;
-		return 1;
-	}
-	return session;
+ContextSystem::NewSession(Context* ctx) {
+	ctx->data_->session_++;
+	return ctx->data_->session_;
 }
 
-uint32_t
-cobweb_context_handle(struct context_t* ctx) {
-	return ctx->_data->handle;
-}
-
-void
-cobweb_context_logfile(struct context_t* ctx, int type, void* data, size_t sz) {
-	uint32_t logger = cobweb_handle_findname("logger");
-	if (logger == 0) {
-		return;
+std::string
+ContextSystem::CMD_REG(Context* ctx, std::string name) {
+	if (name.at(0) == '.') {
+		HandleSystem::Naming(ctx->data_->handle_, name);
 	}
-	struct message_t format;
-	if (ctx == nullptr) {
-		format.source = 0;
-	}
-	else {
-		format.source = cobweb_context_handle(ctx);
-	}
-	format.session = 0;
-	format.data = data;
-	format.sz = sz;
-	format.type = type;
-	cobweb_context_push(logger, format);
-}
-
-void
-cobweb_context_log(struct context_t* ctx, const char* format, ...) {
-	char tmp[COBWEB_MESSAGE_SIZE];
-	char* data = nullptr;
-
-	va_list ap;
-
-	va_start(ap, format);
-	int len = vsnprintf(tmp, COBWEB_MESSAGE_SIZE, format, ap);
-	va_end(ap);
-	if (len >= 0 && len < COBWEB_MESSAGE_SIZE) {
-		data = cobweb_strdup(tmp);
-	}
-	else {
-		int max_size = COBWEB_MESSAGE_SIZE;
-		for (;;) {
-			max_size *= 2;
-			data = (char*)cobweb_malloc(max_size);
-			va_start(ap, format);
-			len = vsnprintf(data, max_size, format, ap);
-			va_end(ap);
-			if (len < max_size) {
-				break;
-			}
-			cobweb_free(data);
+	else if (name.at(0) == ':') {
+		if (HandleSystem::FindHandle(name) != 0) {
+			HandleSystem::Naming(ctx->data_->handle_, name);
 		}
 	}
-	if (len < 0) {
-		cobweb_free(data);
-		platform_red_print("vsnprintf error :");
-		return;
-	}
+	else {
 
-	cobweb_context_logfile(ctx, PTYPE_TEXT, data, len);
+	}
+	return "";
 }
 
-void
-cobweb_context_error(struct context_t* ctx, const char* format, ...) {
-	char tmp[COBWEB_MESSAGE_SIZE];
-	char* data = nullptr;
-
-	va_list ap;
-
-	va_start(ap, format);
-	int len = vsnprintf(tmp, COBWEB_MESSAGE_SIZE, format, ap);
-	va_end(ap);
-	if (len >= 0 && len < COBWEB_MESSAGE_SIZE) {
-		data = cobweb_strdup(tmp);
-	}
-	else {
-		int max_size = COBWEB_MESSAGE_SIZE;
-		for (;;) {
-			max_size *= 2;
-			data = (char*)cobweb_malloc(max_size);
-			va_start(ap, format);
-			len = vsnprintf(data, max_size, format, ap);
-			va_end(ap);
-			if (len < max_size) {
-				break;
-			}
-			cobweb_free(data);
+std::string 
+ContextSystem::CMD_QUERY(Context* ctx, std::string param) {
+	std::string result = "";
+	if (param.at(0) == '.') {
+		uint32_t handle = HandleSystem::FindHandle(param);
+		if (handle != 0) {
+			result = UtilsSystem::FormatString("%ud", handle);
 		}
 	}
-	if (len < 0) {
-		cobweb_free(data);
-		platform_red_print("vsnprintf error :");
-		return;
-	}
-
-	cobweb_context_logfile(ctx, PTYPE_ERROR, data, len);
-}
-
-
-static void
-log_blob(FILE* f, void* buffer, size_t sz) {
-	size_t i;
-	uint8_t* buf = (uint8_t*)buffer;
-	for (i = 0; i != sz; i++) {
-		fprintf(f, "%02x", buf[i]);
-	}
-}
-
-void
-cobweb_context_log_output(FILE* f, uint32_t source, int type, int session, void* buffer, size_t sz) {
-	if (type == PTYPE_SOCKET) {
-		//log_socket(f, buffer, sz);
+	else if (param.at(0) == ':') {
+	
 	}
 	else {
-		uint32_t ti = (uint32_t)cobweb_timestamp();
-		fprintf(f, ":%08x %d %d %u ", source, type, session, ti);
-		log_blob(f, buffer, sz);
-		fprintf(f, "\n");
-		fflush(f);
+
 	}
+	return result;
+}
+
+std::string 
+ContextSystem::CMD_NAME(Context* ctx, std::string param) {
+	std::vector<std::string> substr_vecotr;
+	UtilsSystem::SplitString(param, ':', substr_vecotr);
+	if (substr_vecotr.size() == 2) {
+		std::string name = substr_vecotr.at(0);
+		uint32_t handle = std::stoi(substr_vecotr.at(1));
+		HandleSystem::Naming(handle, name);
+		return "1";
+	}
+	else {
+		return "0";
+	}
+}
+
+std::string
+ContextSystem::CMD_GETENV(Context* ctx, std::string param) {
+	std::string value = EnvSystem::Get(param);
+	return value;
+}
+
+std::string
+ContextSystem::CMD_SETENV(Context* ctx, std::string param) {
+	std::vector<std::string> substr_vecotr;
+	UtilsSystem::SplitString(param, ':', substr_vecotr);
+	if (substr_vecotr.size() == 2) {
+		EnvSystem::Set(substr_vecotr.at(0), substr_vecotr.at(1));
+		return substr_vecotr.at(1);
+	}
+	else {
+		return "";
+	}
+}
+
+std::string
+ContextSystem::CMD_EXIT(Context* ctx, std::string param) {
+	HandleSystem::Retire(ctx->get_handle(ctx));
+	return "1";
+}
+
+std::string
+ContextSystem::CMD_KILL(Context* ctx, std::string param) {
+	uint32_t handle = std::stoi(param);
+	Context* kill_ctx = HandleSystem::FindContext(handle);
+	if (kill_ctx != nullptr) {
+		HandleSystem::Retire(kill_ctx->get_handle(kill_ctx));
+		return "1";
+	}
+	else {
+		return "0";
+	}
+}
+
+std::string
+ContextSystem::CMD_LAUNCH(Context* ctx, std::string param) {
+	std::vector<std::string> substr_vecotr;
+	UtilsSystem::SplitString(param, ' ', substr_vecotr);
+	if (substr_vecotr.size() != 2) {
+		return "0";
+	}
+
+	Context* new_ctx = ContextSystem::New(substr_vecotr.at(0), substr_vecotr.at(1));
+	if (new_ctx != nullptr) {
+		return UtilsSystem::FormatString("%ud", new_ctx->get_handle(new_ctx));
+	}
+	else {
+		return "0";
+	}
+}
+
+std::string
+ContextSystem::CMD_TIMEOUT(Context* ctx, std::string param) {
+	size_t time = std::stoi(param);
+	int session = TimerSystem::Timeout(ctx->get_handle(ctx), PTYPE_RESPONSE, ContextSystem::NewSession(ctx), nullptr, 0, time);
+	return UtilsSystem::FormatString("%d", session);
 }

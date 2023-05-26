@@ -1,57 +1,62 @@
 ﻿/***************************************************
 Copyright (C): 2020-2021, lanchong.xyz/Ltd.
-File name: cobweb_handle.c
+File name: cobweb_handle.cpp
 Description: 所有的服务在这里通过handle进行模询到
 Author: ydlc
 Version: 1.0
 Date: 2021.10.10
 History:
 ****************************************************/
-
-#include "cobweb.h"
-#include <assert.h>
-#include <map>
+#include "handle.h"
 #include <mutex>
+#include <queue>
+#include <map>
+#include <cassert>
 
 
-struct handle_storage_t {
-	std::mutex mutex;
-	uint32_t handle_index;
-	std::map<uint32_t, struct context_t*> ctx_slot;
-	std::map<uint32_t, std::string> name_slot;
+class Handles {
+public:
+	uint32_t index_;
+	std::mutex mutex_;
+	std::map<uint32_t, std::string> name_storage_;
+	std::map<uint32_t, Context*> ctx_storage_;
+	std::queue<uint32_t> handle_storage_;
 };
 
+static Handles* H = nullptr;
 
-static struct handle_storage_t* H = nullptr;
-
-
-uint32_t
-cobweb_handle_register(struct context_t* ctx) {
-	uint32_t handle = 0;
-	H->mutex.lock();
-	handle = H->handle_index++;
-	H->ctx_slot.insert(std::map<uint32_t, struct context_t*>::value_type(handle, ctx));
-	H->mutex.unlock();
-	return handle;
+void
+HandleSystem::Init() {
+	assert(H == nullptr);
+	H = new Handles();
+	assert(H != nullptr);
+	H->index_ = SYSTEM_HANDLE;
 }
 
-int
-cobweb_handle_retire(uint32_t handle) {
-	auto iter = H->ctx_slot.find(handle);
-	if (iter == H->ctx_slot.end()) {
-		return 1;
+void
+HandleSystem::Release() {
+	assert(H != nullptr);
+	H->name_storage_.clear();
+	H->ctx_storage_.clear();
+	delete H;
+	H = nullptr;
+}
+
+std::string
+HandleSystem::FindName(uint32_t handle) {
+	auto iter = H->name_storage_.find(handle);
+	if (iter != H->name_storage_.end()) {
+		return iter->second;
 	}
-	H->mutex.lock();
-	H->ctx_slot.erase(handle);
-	H->name_slot.erase(handle);
-	H->mutex.unlock();
-	return 0;
+	else {
+		return "";
+	}
 }
 
-struct context_t*
-	cobweb_handle_find(uint32_t handle) {
-	auto iter = H->ctx_slot.find(handle);
-	if (iter != H->ctx_slot.end() && cobweb_context_handle(iter->second) == handle) {
+Context* 
+HandleSystem::FindContext(uint32_t handle) {
+	auto iter = H->ctx_storage_.find(handle);
+	if (iter != H->ctx_storage_.end()) {
 		return iter->second;
 	}
 	else {
@@ -59,56 +64,68 @@ struct context_t*
 	}
 }
 
-void
-cobweb_handle_retireall() {
-	H->mutex.lock();
-	H->ctx_slot.clear();
-	H->name_slot.clear();
-	H->mutex.unlock();
-}
-
 uint32_t
-cobweb_handle_findname(const char* name) {
+HandleSystem::FindHandle(std::string name) {
 	uint32_t handle = 0;
-
-	H->mutex.lock();
-	auto iter = H->name_slot.begin();
-	while (iter != H->name_slot.end()) {
-		if (iter->second.compare(name) == 0) {
+	auto iter = H->name_storage_.begin();
+	while (iter != H->name_storage_.end()) {
+		if (iter->second == name) {
 			handle = iter->first;
+			break;
 		}
 		iter++;
 	}
-	H->mutex.unlock();
-
 	return handle;
 }
 
-const char*
-cobweb_handle_namehandle(uint32_t handle, const char* name) {
-	const char* ret = NULL;
-	H->mutex.lock();
-	auto item = H->name_slot.insert(std::map<uint32_t, std::string>::value_type(handle, name));
+uint32_t
+HandleSystem::Register(Context* ctx) {
+	uint32_t handle = 0;
+	H->mutex_.lock();
+	H->index_++;
+	auto item = H->ctx_storage_.insert(std::map<uint32_t, Context*>::value_type(H->index_, ctx));
+	handle = item.first->first;
+	H->mutex_.unlock();
+	return handle;
+}
+
+std::string
+HandleSystem::Naming(uint32_t handle, std::string name) {
+	std::string ret;
+	H->mutex_.lock();
+	auto item = H->name_storage_.insert(std::map<uint32_t, std::string>::value_type(handle, name));
 	if (item.second) {
-		ret = item.first->second.c_str();
+		ret = item.first->second;
 	}
-	H->mutex.unlock();
+	H->mutex_.unlock();
 	return ret;
 }
 
 void
-cobweb_handle_init(void) {
-	assert(H == nullptr);
-	H = new handle_storage_t();
-	assert(H != nullptr);
-	H->handle_index = 1;
+HandleSystem::Retire(uint32_t handle) {
+	H->mutex_.lock();
+	H->name_storage_.erase(handle);
+	H->ctx_storage_.erase(handle);
+	H->mutex_.unlock();
+}
+
+uint32_t
+HandleSystem::Dequeue() {
+	uint32_t handle = 0;
+	if (!H->handle_storage_.empty()) {
+		H->mutex_.lock();
+		if (!H->handle_storage_.empty()) {
+			handle = H->handle_storage_.front();
+			H->handle_storage_.pop();
+		}
+		H->mutex_.unlock();
+	}
+	return handle;
 }
 
 void
-cobweb_handle_release() {
-	assert(H != nullptr);
-	cobweb_handle_retireall();
-	delete H;
-	H = nullptr;
+HandleSystem::Enqueue(uint32_t handle) {
+	H->mutex_.lock();
+	H->handle_storage_.push(handle);
+	H->mutex_.unlock();
 }
-

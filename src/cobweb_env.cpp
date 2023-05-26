@@ -7,53 +7,54 @@ Version: 1.0
 Date: 2021.12.14
 History:
 *************************************************/
-
-#include "cobweb.h"
-#include <string>
+#include "env.h"
 #include <mutex>
 #include <map>
+#include <cassert>
 
-struct env_t {
-	std::mutex mutex;
-	std::map<std::string, std::string> storage;
+class Env {
+public:
+	std::mutex mutex_;
+	std::map<std::string, std::string> storage_;
 };
 
 
-static struct env_t* E = nullptr;
+static Env* E = nullptr;
 
 
 void
-cobweb_env_init(void) {
+EnvSystem::Init() {
 	assert(E == nullptr);
-	E = new env_t();
-}
-
-const char*
-cobweb_getenv(const char* key) {
-	const char* result = NULL;
-	E->mutex.lock();
-	auto iter = E->storage.find(key);
-	if (iter != E->storage.end()) {
-		result = iter->second.c_str();
-	}
-	E->mutex.unlock();
-	return result;
+	E = new Env();
+	assert(E != nullptr);
 }
 
 void
-cobweb_setenv(const char* key, const char* value) {
-	E->mutex.lock();
-	auto iter = E->storage.find(key);
-	if (iter == E->storage.end()) {
-		E->storage.insert(std::map<std::string, std::string>::value_type(key, value));
-	}
-	E->mutex.unlock();
-}
-
-void
-cobweb_env_release(void) {
+EnvSystem::Release() {
 	assert(E != nullptr);
 	delete E;
 	E = nullptr;
+}
+
+std::string
+EnvSystem::Get(std::string key) {
+	std::string str;
+	E->mutex_.lock();
+	auto iter = E->storage_.find(key);
+	if (iter != E->storage_.end()) {
+		str = iter->second;
+	}
+	E->mutex_.unlock();
+	return str;
+}
+
+void
+EnvSystem::Set(std::string key, std::string value) {
+	E->mutex_.lock();
+	auto iter = E->storage_.find(key);
+	if (iter == E->storage_.end()) {
+		E->storage_.insert(std::map<std::string, std::string>::value_type(key, value));
+	}
+	E->mutex_.unlock();
 }
 

@@ -14,31 +14,40 @@
       <FullPath>E:\github\cobweb\build\Debug\cobweb.exe</FullPath>
     </ProjectOutput>
     <ProjectOutput>
+      <FullPath>E:\github\cobweb\build\cservice\Debug\echoserver.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\github\cobweb\build\extern\libevent\bin\Debug\event_core.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\github\cobweb\build\extern\libevent\bin\Debug\event_extra.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\github\cobweb\build\extern\libevent\bin\Debug\event.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\github\cobweb\build\cservice\Debug\kcpserver.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
       <FullPath>E:\github\cobweb\build\luaclib\Debug\lbox2d.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
       <FullPath>E:\github\cobweb\build\luaclib\Debug\lcobweb.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>E:\github\cobweb\build\luaclib\Debug\lcrypt.dll</FullPath>
+      <FullPath>E:\github\cobweb\build\luaclib\Debug\lev.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>E:\github\cobweb\build\luaclib\Debug\lmysql.dll</FullPath>
-    </ProjectOutput>
-    <ProjectOutput>
-      <FullPath>E:\github\cobweb\build\luaclib\Debug\lnetpack.dll</FullPath>
+      <FullPath>E:\github\cobweb\build\luaclib\Debug\lnetwork.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
       <FullPath>E:\github\cobweb\build\cservice\Debug\logger.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>E:\github\cobweb\build\luaclib\Debug\ltcp.dll</FullPath>
-    </ProjectOutput>
-    <ProjectOutput>
       <FullPath>E:\github\cobweb\build\cservice\Debug\luax.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>E:\github\cobweb\build\luaclib\Debug\ludp.dll</FullPath>
+      <FullPath>E:\github\cobweb\build\cservice\Debug\tcpserver.dll</FullPath>
     </ProjectOutput>
     <ProjectOutput>
       <FullPath>E:\github\cobweb\build\testbed\Debug\testbed.exe</FullPath>

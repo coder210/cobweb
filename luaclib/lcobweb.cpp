@@ -2,7 +2,6 @@
 #include <memory.h>
 #include <malloc.h>
 #include <stdint.h>
-#include "def.h"
 #include "cobweb.h"
 extern "C" {
 #include "lua/lapi.h"
@@ -627,7 +626,8 @@ luaseri_pack(lua_State* L) {
 
 static int
 lversion(struct lua_State* L) {
-	lua_pushstring(L, "v1.0.0");
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
+	lua_pushstring(L, ctx->version().c_str());
 	return 1;
 }
 
@@ -642,8 +642,8 @@ traceback(lua_State* L) {
 	return 1;
 }
 
-static int
-_cb(struct context_t* ctx, void* ud, int type,
+static bool
+_cb(Context* ctx, void* ud, int type,
 	int session, uint32_t source,
 	const void* msg, size_t sz) {
 	lua_State* L = (lua_State*)ud;
@@ -670,38 +670,38 @@ _cb(struct context_t* ctx, void* ud, int type,
 	if (r == LUA_OK) {
 		return 0;
 	}
-	const char* self = ctx->command(ctx, "REG", NULL);
+
+	uint32_t self = ctx->get_handle(ctx);
 	switch (r) {
 	case LUA_ERRRUN:
-		ctx->log(ctx, "lua call [%x to %s : %d msgsz = %d] error : %s", source, self, session, sz, lua_tostring(L, -1));
+		ctx->log(self, "lua call [%x to %x : %d msgsz = %d] error : %s", source, self, session, sz, lua_tostring(L, -1));
 		break;
 	case LUA_ERRMEM:
-		ctx->log(ctx, "lua memory error : [%x to %s : %d]", source, self, session);
+		ctx->log(self, "lua memory error : [%x to %x : %d]", source, self, session);
 		break;
 	case LUA_ERRERR:
-		ctx->log(ctx, "lua error in error : [%x to %s : %d]", source, self, session);
+		ctx->log(self, "lua error in error : [%x to %x : %d]", source, self, session);
 		break;
 	case LUA_ERRGCMM:
-		ctx->log(ctx, "lua gc error : [%x to %s : %d]", source, self, session);
+		ctx->log(self, "lua gc error : [%x to %x : %d]", source, self, session);
 		break;
 	};
 
 	lua_pop(L, 1);
 
-	return 0;
+	return true;
 }
 
-static int
-forward_cb(struct context_t* ctx, void* ud, int type, int session, uint32_t source, const void* msg, size_t sz) {
+static bool
+forward_cb(Context* ctx, void* ud, int type, int session, uint32_t source, const void* msg, size_t sz) {
 	_cb(ctx, ud, type, session, source, msg, sz);
 	// don't delete msg in forward mode.
-	return 1;
+	return false;
 }
 
-// 设置回调函数
 static int
 lcallback(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	int forward = lua_toboolean(L, 2);
 	luaL_checktype(L, 1, LUA_TFUNCTION);
 	lua_settop(L, 1);
@@ -720,19 +720,18 @@ lcallback(lua_State* L) {
 	return 0;
 }
 
-// 命令函数
 static int
 lcommand(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	const char* cmd = luaL_checkstring(L, 1);
-	const char* result;
-	const char* parm = NULL;
+	std::string result;
+	const char* param = "";
 	if (lua_gettop(L) == 2) {
-		parm = luaL_checkstring(L, 2);
+		param = luaL_checkstring(L, 2);
 	}
-	result = ctx->command(ctx, cmd, parm);
-	if (result) {
-		lua_pushstring(L, result);
+	result = ctx->command(ctx, cmd, param);
+	if (!result.empty()) {
+		lua_pushstring(L, result.c_str());
 		return 1;
 	}
 	return 0;
@@ -740,20 +739,20 @@ lcommand(lua_State* L) {
 
 static int
 lintcommand(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	const char* cmd = luaL_checkstring(L, 1);
-	const char* result;
-	const char* parm = NULL;
-	char tmp[64] = { 0 };	// for integer parm
+	std::string result;
+	const char* param = "";
+	char tmp[64] = { 0 };
 	if (lua_gettop(L) == 2) {
 		int32_t n = (int32_t)luaL_checkinteger(L, 2);
 		sprintf(tmp, "%d", n);
-		parm = tmp;
+		param = tmp;
 	}
 
-	result = ctx->command(ctx, cmd, parm);
-	if (result) {
-		lua_Integer r = strtoll(result, NULL, 0);
+	result = ctx->command(ctx, cmd, param);
+	if (!result.empty()) {
+		lua_Integer r = std::stol(result);
 		lua_pushinteger(L, r);
 		return 1;
 	}
@@ -762,8 +761,8 @@ lintcommand(lua_State* L) {
 
 static int
 lgenid(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
-	int session = ctx->send(ctx, 0, 0, PTYPE_TAG_ALLOCSESSION, 0, NULL, 0);
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
+	int session = ctx->newsession(ctx);
 	lua_pushinteger(L, session);
 	return 1;
 }
@@ -779,7 +778,7 @@ get_dest_string(lua_State* L, int index) {
 
 static int
 lsend(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	uint32_t dest = (uint32_t)lua_tointeger(L, 1);
 	const char* dest_string = NULL;
 	if (dest == 0) {
@@ -792,25 +791,27 @@ lsend(lua_State* L) {
 	int type = (int)luaL_checkinteger(L, 2);
 	int session = 0;
 	if (lua_isnil(L, 3)) {
-		type |= PTYPE_TAG_ALLOCSESSION;
+		session = ctx->newsession(ctx);
 	}
 	else {
 		session = (int)luaL_checkinteger(L, 3);
 	}
 
+	uint32_t source = ctx->get_handle(ctx);
 	int mtype = lua_type(L, 4);
+	bool ret = false;
 	switch (mtype) {
 	case LUA_TSTRING: {
 		size_t len = 0;
-		void* msg = (void*)lua_tolstring(L, 4, &len);
+		const void* msg = lua_tolstring(L, 4, &len);
 		if (len == 0) {
 			msg = NULL;
 		}
 		if (dest_string) {
-			session = ctx->sendname(ctx, 0, dest_string, type, session, msg, len);
+			ret = ctx->sendname(source, dest_string, type | PTYPE_TAG_STRING, session, msg, len);
 		}
 		else {
-			session = ctx->send(ctx, 0, dest, type, session, msg, len);
+			ret = ctx->send(source, dest, type | PTYPE_TAG_STRING, session, msg, len);
 		}
 		break;
 	}
@@ -818,28 +819,24 @@ lsend(lua_State* L) {
 		void* msg = lua_touserdata(L, 4);
 		int size = (int)luaL_checkinteger(L, 5);
 		if (dest_string) {
-			session = ctx->sendname(ctx, 0, dest_string, type | PTYPE_TAG_DONTCOPY, session, msg, size);
+			ret = ctx->sendname(source, dest_string, type | PTYPE_TAG_USERDATA, session, msg, size);
 		}
 		else {
-			session = ctx->send(ctx, 0, dest, type | PTYPE_TAG_DONTCOPY, session, msg, size);
+			ret = ctx->send(source, dest, type | PTYPE_TAG_USERDATA, session, msg, size);
 		}
 		break;
 	}
 	default:
 		luaL_error(L, "cobweb.send invalid param %s", lua_typename(L, lua_type(L, 4)));
 	}
-	if (session < 0) {
-		// send to invalid address
-		// todo: maybe throw an error would be better
-		return 0;
-	}
+	lua_pushboolean(L, ret);
 	lua_pushinteger(L, session);
-	return 1;
+	return 2;
 }
 
 static int
 lredirect(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	uint32_t dest = (uint32_t)lua_tointeger(L, 1);
 	const char* dest_string = NULL;
 	if (dest == 0) {
@@ -850,18 +847,19 @@ lredirect(lua_State* L) {
 	int session = (int)luaL_checkinteger(L, 4);
 
 	int mtype = lua_type(L, 5);
+	bool ret = false;
 	switch (mtype) {
 	case LUA_TSTRING: {
 		size_t len = 0;
-		void* msg = (void*)lua_tolstring(L, 5, &len);
+		const char* msg = lua_tolstring(L, 5, &len);
 		if (len == 0) {
 			msg = NULL;
 		}
 		if (dest_string) {
-			session = ctx->sendname(ctx, source, dest_string, type, session, msg, len);
+			ret = ctx->sendname(source, dest_string, type | PTYPE_TAG_STRING, session, msg, len);
 		}
 		else {
-			session = ctx->send(ctx, source, dest, type, session, msg, len);
+			ret = ctx->send(source, dest, type | PTYPE_TAG_STRING, session, msg, len);
 		}
 		break;
 	}
@@ -869,10 +867,10 @@ lredirect(lua_State* L) {
 		void* msg = lua_touserdata(L, 5);
 		int size = (int)luaL_checkinteger(L, 6);
 		if (dest_string) {
-			session = ctx->sendname(ctx, source, dest_string, type | PTYPE_TAG_DONTCOPY, session, msg, size);
+			ret = ctx->sendname(source, dest_string, type | PTYPE_TAG_USERDATA, session, msg, size);
 		}
 		else {
-			session = ctx->send(ctx, source, dest, type | PTYPE_TAG_DONTCOPY, session, msg, size);
+			ret = ctx->send(source, dest, type | PTYPE_TAG_USERDATA, session, msg, size);
 		}
 		break;
 	}
@@ -884,12 +882,12 @@ lredirect(lua_State* L) {
 
 static int
 lerror(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	int n = lua_gettop(L);
 	if (n <= 1) {
 		lua_settop(L, 1);
 		const char* s = luaL_tolstring(L, 1, NULL);
-		ctx->error(ctx, "%s", s);
+		ctx->log_error(ctx->get_handle(ctx), "%s", s);
 		return 0;
 	}
 	luaL_Buffer b;
@@ -903,18 +901,18 @@ lerror(lua_State* L) {
 		}
 	}
 	luaL_pushresult(&b);
-	ctx->error(ctx, "%s", lua_tostring(L, -1));
+	ctx->log_error(ctx->get_handle(ctx), "%s", lua_tostring(L, -1));
 	return 0;
 }
 
 static int
 llog(lua_State* L) {
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, lua_upvalueindex(1));
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
 	int n = lua_gettop(L);
 	if (n <= 1) {
 		lua_settop(L, 1);
 		const char* s = luaL_tolstring(L, 1, NULL);
-		ctx->log(ctx, "%s", s);
+		ctx->log(ctx->get_handle(ctx), "%s", s);
 		return 0;
 	}
 	luaL_Buffer b;
@@ -928,7 +926,7 @@ llog(lua_State* L) {
 		}
 	}
 	luaL_pushresult(&b);
-	ctx->log(ctx, "%s", lua_tostring(L, -1));
+	ctx->log(ctx->get_handle(ctx), "%s", lua_tostring(L, -1));
 	return 0;
 }
 
@@ -980,7 +978,7 @@ ltointeger(lua_State* L) {
 	return 1;
 }
 
-COBWEB_CMOD_API int
+COBWEB_MOD_API int
 luaopen_lcobweb(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {
@@ -1004,7 +1002,7 @@ luaopen_lcobweb(lua_State* L) {
 	luaL_newlibtable(L, l);
 
 	lua_getfield(L, LUA_REGISTRYINDEX, "__this");
-	struct context_t* ctx = (struct context_t*)lua_touserdata(L, -1);
+	Context* ctx = (Context*)lua_touserdata(L, -1);
 	if (ctx == nullptr) {
 		printf("Init __this first");
 		return 0;

@@ -1,113 +1,79 @@
 /****************************************************
 Copyright (C): 2020-2021, lanchong.xyz/Ltd.
-File name: cobweb_utils.c
+File name: cobweb_utils.cpp
 Description: 通用方法实现
 Author: ydlc
 Version: 1.0
 Date: 2021.4.22
 History:
 *****************************************************/
+#include "utils.h"
+#include <chrono>
+#include <string>
+#include <ctime>
+#include <sstream>
+#include <cstdarg>
 
-#include "cobweb.h"
-#include <time.h>
-
-
-char* 
-cobweb_strsep(char** stringp, const char* delim){
-	char* s;
-	const char* spanp;
-	int c, sc;
-	char* tok;
-	if ((s = *stringp) == NULL)
-		return (NULL);
-	for (tok = s;;) {
-		c = *s++;
-		spanp = delim;
-		do {
-			if ((sc = *spanp++) == c) {
-				if (c == 0)
-					s = NULL;
-				else
-					s[-1] = 0;
-				*stringp = s;
-				return (tok);
-			}
-		} while (sc != 0);
+bool 
+UtilsSystem::FileExists(const char* filename) {
+	if (FILE* file = fopen(filename, "r")) {
+		fclose(file);
+		return true;
+	}
+	else {
+		return false;
 	}
 }
 
-
-char*
-cobweb_read_file(const char* filename) {
-	FILE* fp = fopen(filename, "rb");
-	if (fp == NULL) {
-		platform_red_print("read config file failed");
-		return NULL;
-	}
-	fseek(fp, 0, SEEK_END);
-	int total_size = (int)ftell(fp);
-	char* buffer = (char*)cobweb_malloc((total_size + 1) * sizeof(char));
-	rewind(fp);
-	size_t read_size = fread(buffer, 1, total_size, fp);
-	buffer[read_size] = 0;
-	fclose(fp);
-	return buffer;
-}
-
-void
-cobweb_append_file(const char* filename, const char* data) {
-	FILE* fp = fopen(filename, "a+");
-	if (fp != NULL) {
-		fprintf(fp, "%s\n", data);
-		fclose(fp);
-	}
-}
-
-char*
-cobweb_strdup(const char* str) {
-	size_t sz = strlen(str);
-	char* ret = (char*)cobweb_malloc(sz + 1);
-	if (ret != NULL) {
-		memcpy(ret, str, sz + 1);
-	}
-	return ret;
-}
-
-void
-cobweb_write_short(uint8_t* buffer, short value) {
-	buffer[0] = (value >> 8) & 0xff;
-	buffer[1] = value & 0xff;
-}
-
-short
-cobweb_read_short(uint8_t* buffer) {
-	short r = (short)buffer[0] << 8 | (short)buffer[1];
-	return r;
-}
-
-void
-cobweb_write_int(uint8_t* buffer, int value) {
-	buffer[0] = ((0xff000000 & value) >> 24);
-	buffer[1] = ((0xff0000 & value) >> 16);
-	buffer[2] = ((0xff00 & value) >> 8);
-	buffer[3] = (0xff & value);
-}
-
-int
-cobweb_read_int(uint8_t* buffer) {
-	int r = buffer[3];
-	r |= (int)buffer[2] << 8;
-	r |= (int)buffer[1] << 16;
-	r |= (int)buffer[0] << 24;
-	return r;
-}
-
-int64_t
-cobweb_timestamp(void) {
-	long sec = 0;
-	long usec = 0;
-	platform_timeofday(&sec, &usec);
-	int64_t timestamp = sec * 1000 + usec / 1000;
+int64_t 
+UtilsSystem::Timestamp(void) {
+	std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> millis
+		= std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
+	time_t total_milliseconds = millis.time_since_epoch().count();
+	int64_t timestamp = total_milliseconds / 1000;
 	return timestamp;
+}
+
+std::string
+UtilsSystem::CurrentDatetime(const char* format) {
+	if (format != NULL) {
+		std::string stime;
+		std::stringstream strtime;
+		std::time_t currenttime = std::time(0);
+		char tAll[255];
+		std::strftime(tAll, sizeof(tAll), format, std::localtime(&currenttime));
+		strtime << tAll;
+		stime = strtime.str();
+		return stime;
+	}
+	else {
+		return "";
+	}
+}
+
+void
+UtilsSystem::SplitString(std::string str, const char split, std::vector<std::string>& substr_vector) {
+	int index = -1;
+	while ((index = str.find(split)) != -1) {
+		std::string substr = str.substr(0, index);
+		substr_vector.push_back(substr);
+		str = str.substr(index + 1);
+	}
+	if (substr_vector.size() > 0) {
+		substr_vector.push_back(str);
+	}
+}
+
+std::string 
+UtilsSystem::FormatString(const char* format, ...) {
+	std::string str;
+	va_list ap;
+	va_start(ap, format);
+	int length = _vscprintf(format, ap) +1;
+	std::vector<char> vectorChars(length);
+	_vsnprintf(vectorChars.data(), length, format, ap);
+	str.assign(vectorChars.data());
+	va_end(ap);
+	return str;
 }
 

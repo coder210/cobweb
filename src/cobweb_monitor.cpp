@@ -1,6 +1,6 @@
 ﻿/********************************************************
 Copyright (C): 2020-2021, lanchong.xyz/Ltd.
-File name: cobweb_monitor.c
+File name: CobwebSystem_monitor.cpp
 Description: 监控消息分发时的状态,出现异常进行预警
 Author: ydlc
 Version: 1.0
@@ -8,106 +8,113 @@ Date: 2021.12.10
 History:
 ********************************************************/
 
-#include "cobweb.h"
+#include "monitor.h"
 #include <vector>
 #include <mutex>
-#include <thread>
-#include <condition_variable>
+#include <cassert>
+#include <cstring>
+#include <condition_variable>  
+#include "platform.h"
 
 
-struct monitor_t {
-	int version;
-	int check_version;
-	uint32_t source;
-	uint32_t dest;
+class Monitors {
+public:
+	std::vector<Monitor*> ms_;
+	std::mutex mutex_;
+	std::condition_variable cv_;
+	bool quit_;
 };
 
 
-struct monitors_t {
-	std::vector<struct monitor_t*> ms;
-	std::mutex mutex;
-	std::condition_variable cv;
-	bool quit;
-};
-
-
-static struct monitors_t* M = nullptr;
+static Monitors* M = nullptr;
 
 
 void
-cobweb_monitor_init(void) {
+MonitorSystem::Init(int thread) {
 	assert(M == nullptr);
-	M = new monitors_t();
+	M = new Monitors();
 	assert(M != nullptr);
-	M->quit = false;
+	M->mutex_.lock();
+	for (int i = 0; i < thread; i++) {
+		Monitor* m = new Monitor();
+		memset(m, 0, sizeof(Monitor));
+		M->ms_.push_back(m);
+	}
+	M->quit_ = false;
+	M->mutex_.unlock();
 }
 
 void
-cobweb_monitor_release(void) {
+MonitorSystem::Release(void) {
 	assert(M != nullptr);
-	for (size_t i = 0; i < M->ms.size(); i++) {
-		delete M->ms[i];
+	for (size_t i = 0; i < M->ms_.size(); i++) {
+		delete M->ms_[i];
 	}
-	M->ms.clear();
+	M->ms_.clear();
 	delete M;
 	M = nullptr;
 }
 
-struct monitor_t*
-	cobweb_monitor_new() {
-	struct monitor_t* m = new monitor_t();
-	memset(m, 0, sizeof(struct monitor_t));
-	M->mutex.lock();
-	M->ms.push_back(m);
-	M->mutex.unlock();
-	return m;
-}
-
 void
-cobweb_monitor_trigger(struct monitor_t* m, uint32_t source, uint32_t dest) {
-	m->source = source;
-	m->dest = dest;
-	m->version++;
-}
-
-void
-cobweb_monitor_check() {
-	for (size_t i = 0; i < M->ms.size(); i++) {
-		struct monitor_t* m = M->ms[i];
-		if (m->version == m->check_version) {
-			if (m->dest) {
-				struct context_t* ctx = cobweb_handle_find(m->dest);
-				cobweb_context_error(ctx, "A message from [ :%08x ] to [ :%08x ] maybe in an endless loop (version = %d)", m->source, m->dest, m->version);
-			}
-		}
-		else {
-			m->check_version = m->version;
-		}
+MonitorSystem::Sleep(void) {
+	for (size_t i = 0; i < M->ms_.size(); i++) {
+		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		PlatformSystem::msleep(1000);
 	}
 }
 
 void
-cobweb_monitor_sleep(void) {
-	for (size_t i = 0; i < M->ms.size(); i++) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+MonitorSystem::Inspect(void(*error_msg)(std::string, void*), void* ptr) {
+	for (size_t i = 0; i < M->ms_.size(); i++) {
+		Monitor* monitor = M->ms_.at(i);
+		if (monitor->version_ == monitor->check_version_) {
+			if (monitor->dest_) {
+				char str[128] = { 0 };
+				std::sprintf(str, "A message from [ :%08x ] to [ :%08x ] maybe in an endless loop (version = %d)", monitor->source_, monitor->dest_, monitor->version_);
+				error_msg(str, ptr);
+			}
+		}
+		else {
+			monitor->check_version_ = monitor->version_;
+		}
 	}
 }
 
 bool
-cobweb_monitor_quit(void) {
-	return M->quit;
+MonitorSystem::get_quit(void) {
+	if (M->quit_) {
+		M->cv_.notify_one();
+	}
+	return M->quit_;
+}
+
+bool
+MonitorSystem::is_continue() {
+	return !M->quit_;
 }
 
 void
-cobweb_monitor_wait(void) {
-	std::unique_lock <std::mutex> lck(M->mutex);
-	platform_log("阻塞中");
-	M->cv.wait(lck); 
-	platform_log("解除阻塞");
+MonitorSystem::Quit(void) {
+	M->quit_ = true;
 }
 
 void
-cobweb_monitor_wakeup(void) {
-	std::unique_lock <std::mutex> lck(M->mutex);
-	M->cv.notify_one();
+MonitorSystem::Wait(void) {
+	auto next_time = std::chrono::system_clock::now() + std::chrono::seconds(1);
+	std::unique_lock <std::mutex> lck(M->mutex_);
+	M->cv_.wait_until(lck, next_time);
+}
+
+void
+MonitorSystem::Wakeup(void) {
+	 std::unique_lock <std::mutex> lck(M->mutex_);
+	 M->cv_.notify_one();
+}
+
+void
+MonitorSystem::Trigger(int id, uint32_t source, uint32_t dest) {
+	Monitor* monitor = M->ms_.at(id);
+	monitor->source_ = source;
+	monitor->dest_ = dest;
+	monitor->version_++;
 }

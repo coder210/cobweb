@@ -7,102 +7,131 @@ Version: 1.0
 Date: 2021.5.22
 History:
 ************************************************/
-#include "cobweb.h"
-#include <vector>
-#include <list>
-#include <mutex>
+#include "timer.h"
+#include <cassert>
+#include "platform.h"
+#include "handle.h"
 
 
-#define TRIGGER_NUM 9
+#define BACKET_NUM 9
 
 
-struct trigger_t {
-	uint32_t handle;
-	int session;
-	int count;
-	void* data;
-	size_t sz;
+struct Trigger {
+	uint32_t handle_;
+	int type_;
+	int session_;
+	void* data_;
+	size_t sz_;
+	int count_;
 };
 
-struct timer_t {
-	std::mutex mutex;
-	int cur_index;
-	std::vector<std::list<struct trigger_t>*> bucket;
+struct Timer {
+	std::mutex mutex_;
+	int index_;
+	std::vector<std::list<Trigger>*> buckets_;
 };
 
-
-static struct timer_t* T = nullptr;
-
+static Timer* T = nullptr;
 
 void
-cobweb_timer_init(void) {
+TimerSystem::Init() {
 	assert(T == nullptr);
-	T = new timer_t();
+	T = new Timer();
 	assert(T != nullptr);
-	T->cur_index = 0;
-	for (size_t i = 0; i < TRIGGER_NUM; i++) {
-		T->bucket.push_back(new std::list<struct trigger_t>());
+	T->index_ = 0;
+	for (size_t i = 0; i < BACKET_NUM; i++) {
+		T->buckets_.push_back(new std::list<Trigger>());
 	}
 }
 
-int
-cobweb_add_trigger(uint32_t handle, int session, int time, void* data, size_t sz) {
-	struct trigger_t trigger;
-	trigger.handle = handle;
-	trigger.session = session;
-	trigger.data = data;
-	trigger.sz = sz;
-	trigger.count = time / T->bucket.size();
-	T->mutex.lock();
-	int index = (time + T->cur_index) % T->bucket.size();
-	T->bucket[index]->push_back(trigger);
-	T->mutex.unlock();
-	return session;
+void
+TimerSystem::Release() {
+	assert(T != nullptr);
+	T->index_ = 0;
+	for (size_t i = 0; i < T->buckets_.size(); i++) {
+		T->buckets_[i]->clear();
+		delete T->buckets_[i];
+		T->buckets_[i] = nullptr;
+	}
+	T->buckets_.clear();
 }
 
-
 int
-cobweb_timer_tick(void*) {
-	T->cur_index++;
-	T->cur_index %= T->bucket.size();
-	std::list<struct trigger_t>* trigger_list = T->bucket[T->cur_index];
-	auto iter = trigger_list->begin();
-	while (iter != trigger_list->end()) {
-		if (iter->count <= 0) {
-			message_t msg;
-			msg.data = iter->data;
-			msg.session = iter->session;
-			msg.sz = iter->sz;
-			msg.source = 0;
-			msg.type = PTYPE_RESPONSE;
-			cobweb_context_push(iter->handle, msg);
-			T->mutex.lock();
-			iter = trigger_list->erase(iter);
-			T->mutex.unlock();
+TimerSystem::Timeout(uint32_t handle, int type, int session, const void* data, size_t sz, size_t time) {
+	Context* ctx = HandleSystem::FindContext(handle);
+	if (ctx == nullptr) {
+		return session;
+	}
+
+	if ((type & PTYPE_TAG_STRING) != 0) {
+		char* tmp = (char*)malloc(sz + 1);
+		if (tmp == nullptr) {
+			return session;
 		}
-		else {
-			iter->count--;
+		memcpy_s(tmp, sz, data, sz);
+		tmp[sz] = 0;
+		data = tmp;
+	}
+	else if ((type & PTYPE_TAG_USERDATA) != 0) {
+		void* tmp = malloc(sz);
+		if (tmp == nullptr) {
+			return session;
+		}
+		memcpy_s(tmp, sz, data, sz);
+		data = tmp;
+	}
+
+	Trigger trigger = { 0 };
+	trigger.handle_ = handle;
+	trigger.type_ = type & 0xff;
+	trigger.session_ = session;
+	trigger.data_ = (void*)data;
+	trigger.sz_ = sz;
+	trigger.count_ = time / T->buckets_.size();
+	T->mutex_.lock();
+	int index = (time + T->index_) % T->buckets_.size();
+	T->buckets_[index]->push_back(trigger);
+	T->mutex_.unlock();
+	return trigger.session_;
+}
+
+void
+TimerSystem::Tick() {
+	int index = 0;
+	T->mutex_.lock();
+	T->index_++;
+	T->index_ %= T->buckets_.size();
+	index = T->index_;
+	T->mutex_.unlock();
+	std::list<Trigger>* triggers = T->buckets_[index];
+	int count_ = triggers->size();
+	std::list<Trigger>::iterator iter;
+	int i = 0;
+	for (iter = triggers->begin(); iter != triggers->end() && i < count_; i++) {
+		if (iter->count_ == 0) {
+			Context* ctx = HandleSystem::FindContext(iter->handle_);
+			if (ctx != nullptr) {
+				ContextSystem::Push(ctx, SYSTEM_HANDLE, iter->type_, iter->session_, iter->data_, iter->sz_);
+			}
+			iter->count_--;
 			iter++;
 		}
+		else if (iter->count_ > 0) {
+			iter->count_--;
+			iter++;
+		}
+		else {
+			T->mutex_.lock();
+			iter = triggers->erase(iter);
+			T->mutex_.unlock();
+		}
 	}
-	return T->cur_index;
 }
 
 void
-cobweb_timer_sleep(void) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+TimerSystem::Sleep(void) {
+	// std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	PlatformSystem::msleep(10);
 }
 
-void
-cobweb_timer_release(void) {
-	assert(T != nullptr);
-	for (size_t i = 0; i < T->bucket.size(); i++) {
-		T->bucket[i]->clear();
-		delete T->bucket[i];
-		T->bucket[i] = nullptr;
-	}
-	T->bucket.clear();
-	delete T;
-	T = nullptr;
-}
 

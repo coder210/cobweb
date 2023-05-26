@@ -1,16 +1,18 @@
 ﻿#include "cobweb.h"
+#include "platform.h"
 
 
-int 
+
+int
 main(int argc, char** argv) {
 	if (argc <= 1) {
-		platform_error("Need a config file. Please read cobweb config filename");
+		PlatformSystem::error("Need a config file. Please read CobwebSystem config filename");
 		return 0;
 	}
 
 	const char* config_file = argv[1];
-	int ret = cobweb_run(config_file);
+	int ret = CobwebSystem::Start(config_file);
+	PlatformSystem::info("bye");
 
-	platform_green_print("bye");
 	return ret;
 }

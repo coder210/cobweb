@@ -2,8 +2,9 @@ file(GLOB LUA_HEADER_FILES "./*.h")
 
 file(GLOB LUA_SOURCE_FILES "./*.c")
 
-
-add_definitions(-DLUA_BUILD_AS_DLL)
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+	add_definitions(-DLUA_BUILD_AS_DLL)
+endif()
 
 add_library(lua SHARED ${LUA_HEADER_FILES} ${LUA_SOURCE_FILES})
 

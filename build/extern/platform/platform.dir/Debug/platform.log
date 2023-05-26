@@ -1,6 +1,0 @@
-﻿  Building Custom Rule E:/github/cobweb/extern/platform/CMakeLists.txt
-  platform_linux.cpp
-  platform_std.cpp
-  platform_win.cpp
-  正在生成代码...
-  platform.vcxproj -> E:\github\cobweb\build\extern\platform\Debug\platform.lib

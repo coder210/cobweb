@@ -8,6 +8,16 @@ cobweb.start(function ()
         age = 10
     })
     cobweb.log(str)
-    cobweb.newservice("recv")
-    cobweb.exit()
+   
+    --cobweb.newservice("tcpserver")
+    --cobweb.launch("echoserver", address)
+    --cobweb.newservice("recv")
+    
+    -- function f() 
+    --     cobweb.log("ok")
+    --     cobweb.timeout(100, f)
+    -- end
+    -- cobweb.timeout(100, f)
+    
+    --cobweb.exit()
 end)
