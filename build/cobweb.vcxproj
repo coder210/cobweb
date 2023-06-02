@@ -173,6 +173,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="E:\github\cobweb\include\cobweb.h" />
+    <ClInclude Include="E:\github\cobweb\include\context.h" />
     <ClInclude Include="E:\github\cobweb\include\env.h" />
     <ClInclude Include="E:\github\cobweb\include\handle.h" />
     <ClInclude Include="E:\github\cobweb\include\module.h" />

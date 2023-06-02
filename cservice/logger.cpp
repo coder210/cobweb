@@ -1,4 +1,4 @@
-#include "cobweb.h"
+#include "context.h"
 #include <string>
 #include <iostream>
 
@@ -46,7 +46,8 @@ _error(Context* ctx, struct logger* inst, uint32_t source, const char* msg, size
 	fprintf(inst->handle, "%s>[:%08x] ", currtime.c_str(), source);
 	fwrite(msg, sz, 1, inst->handle);
 	fprintf(inst->handle, "\n");
-	fflush(inst->handle); ctx->error("%s>[:%08x] %s", currtime.c_str(), source, msg);
+	fflush(inst->handle); 
+	ctx->error("%s>[:%08x] %s", currtime.c_str(), source, msg);
 }
 
 static bool 

@@ -9,6 +9,7 @@ History:
 ************************************************/
 #include "timer.h"
 #include <cassert>
+#include "context.h"
 #include "platform.h"
 #include "handle.h"
 

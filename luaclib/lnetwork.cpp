@@ -2,7 +2,7 @@
 #include <memory.h>
 #include <malloc.h>
 #include "mylib/network.h"
-#include "cobweb.h"
+#include "context.h"
 extern "C" {
 #include "lua/lapi.h"
 #include "lua/lualib.h"
@@ -22,6 +22,29 @@ static void
 _write_short(uint8_t* buffer, short value) {
 	buffer[0] = (value >> 8) & 0xff;
 	buffer[1] = value & 0xff;
+}
+
+/*
+* 对应c# = BitConverter.ToUInt32
+*/
+static void
+_write_int(uint8_t* buffer, int value) {
+	buffer[3] = ((0xff000000 & value) >> 24);
+	buffer[2] = ((0xff0000 & value) >> 16);
+	buffer[1] = ((0xff00 & value) >> 8);
+	buffer[0] = (0xff & value);
+}
+
+/*
+* 对应c# = BitConverter.ToUInt32
+*/
+static int
+_read_int(uint8_t* buffer) {
+	int r = buffer[0];
+	r |= (int)buffer[1] << 8;
+	r |= (int)buffer[2] << 16;
+	r |= (int)buffer[3] << 24;
+	return r;
 }
 
 static const char*
@@ -61,6 +84,33 @@ lnetpack_unpack(struct lua_State* L) {
 	const char* ptr = luaL_checklstring(L, 1, &len);
 	short size = ptr[1] & 0x000000FF;
 	size |= ((ptr[0] << 8) & 0x0000FF00);
+	lua_pushinteger(L, size);
+	return 1;
+}
+
+static int
+lnetpack_pack32(struct lua_State* L) {
+	size_t len;
+	const char* ptr = tolstring(L, &len, 1);
+	if (len >= 0x100000000) {
+		return luaL_error(L, "Invalid size (too long) of data : %d", len);
+	}
+
+	uint8_t* buffer = (uint8_t*)malloc(len + 4);
+	_write_int(buffer, len);
+	memcpy(buffer + 4, ptr, len);
+
+	lua_pushlightuserdata(L, buffer);
+	lua_pushinteger(L, len + 4);
+
+	return 2;
+}
+
+static int
+lnetpack_unpack32(struct lua_State* L) {
+	size_t len = 0;
+	const char* ptr = luaL_checklstring(L, 1, &len);
+	int size = _read_int((uint8_t*)ptr);
 	lua_pushinteger(L, size);
 	return 1;
 }
@@ -331,6 +381,8 @@ luaopen_lnetwork(lua_State* L) {
 	luaL_Reg l[] = {
 		{"pack", lnetpack_pack},
 		{"unpack", lnetpack_unpack},
+		{"pack32", lnetpack_pack32},
+		{"unpack32", lnetpack_unpack32},
 		{"tostring", lnetpack_tostring},
 		{"free", lnetpack_free},
 		{"init", lsocket_init},

@@ -9,7 +9,9 @@ e:\github\cobweb\build\extern\glfw\cmakefiles\generate.stamp
 e:\github\cobweb\build\extern\imgui\cmakefiles\generate.stamp
 e:\github\cobweb\build\extern\crypt\cmakefiles\generate.stamp
 e:\github\cobweb\build\extern\libevent\cmakefiles\generate.stamp
+e:\github\cobweb\build\extern\protobuf\cmake\cmakefiles\generate.stamp
 e:\github\cobweb\build\testbed\cmakefiles\generate.stamp
+e:\github\cobweb\build\extern\pb\cmakefiles\generate.stamp
 e:\github\cobweb\build\extern\mylib\cmakefiles\generate.stamp
 e:\github\cobweb\build\luaclib\cmakefiles\generate.stamp
 e:\github\cobweb\build\cservice\cmakefiles\generate.stamp

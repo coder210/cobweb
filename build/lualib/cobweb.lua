@@ -17,13 +17,10 @@ local cobweb = {
 	PTYPE_MULTICAST = 2,
 	PTYPE_CLIENT = 3,
 	PTYPE_SYSTEM = 4,
-	PTYPE_HARBOR = 5,
-	PTYPE_SOCKET = 6,
-	PTYPE_ERROR = 7,
-	PTYPE_QUEUE = 8,
-	PTYPE_DEBUG = 9,
-	PTYPE_LUA = 10,
-	PTYPE_SNAX = 11,
+	PTYPE_SOCKET = 5,
+	PTYPE_ERROR = 6,
+	PTYPE_DEBUG = 7,
+	PTYPE_LUA = 8,
 
 	STYPE_DATA = 101, -- socket type
 	STYPE_CONNECT = 102,
@@ -42,9 +39,7 @@ function cobweb.error(msg)
 end
 
 function cobweb.log(msg)
-	local currentlineInfo = debug.getinfo(2, "l")
-	local sourceInfo = debug.getinfo(2, "S")
-	c.log(sourceInfo.short_src .. ":" .. currentlineInfo.currentline .. " " .. tostring(msg))
+	c.log(tostring(msg))
 end
 
 function cobweb.register_protocol(class)

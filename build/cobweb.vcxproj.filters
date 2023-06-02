@@ -39,6 +39,9 @@
     <ClInclude Include="E:\github\cobweb\include\cobweb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="E:\github\cobweb\include\context.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="E:\github\cobweb\include\env.h">
       <Filter>Header Files</Filter>
     </ClInclude>

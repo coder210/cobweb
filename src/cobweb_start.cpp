@@ -17,6 +17,7 @@ History:
 #include "monitor.h"
 #include "handle.h"
 #include "env.h"
+#include "context.h"
 
 void
 CobwebSystem::PrintBlessing() {

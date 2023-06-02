@@ -25,6 +25,7 @@ add_subdirectory("extern/imgui")
 add_subdirectory("extern/crypt")
 #add_subdirectory("extern/libuv")
 add_subdirectory("extern/libevent")
+add_subdirectory("extern/protobuf/cmake")
 
 #设置包含的目录
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/extern)
@@ -74,6 +75,7 @@ else()
 endif()
 
 
+add_subdirectory("extern/pb")
 add_subdirectory("extern/mylib")
 add_subdirectory("luaclib")
 add_subdirectory("cservice")

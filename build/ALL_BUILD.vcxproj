@@ -127,17 +127,21 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{86E5A2F5-BD9C-3A57-9175-7A8F80419605}</Project>
       <Name>echoserver</Name>
     </ProjectReference>
-    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_core_shared.vcxproj">
-      <Project>{24509A8A-8579-300C-A2B8-62E077D27D2A}</Project>
-      <Name>event_core_shared</Name>
+    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_core_static.vcxproj">
+      <Project>{BEF6F797-7B94-3BAA-B89F-A55B52F4A52F}</Project>
+      <Name>event_core_static</Name>
     </ProjectReference>
-    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_extra_shared.vcxproj">
-      <Project>{0F8C85BB-AC45-3A6D-B826-A25BF7736BDF}</Project>
-      <Name>event_extra_shared</Name>
+    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_extra_static.vcxproj">
+      <Project>{D422E16C-8C48-38C0-8AEB-151D95C0335E}</Project>
+      <Name>event_extra_static</Name>
     </ProjectReference>
-    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_shared.vcxproj">
-      <Project>{2B4825B4-4779-3BD7-9506-68D7274EF045}</Project>
-      <Name>event_shared</Name>
+    <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_static.vcxproj">
+      <Project>{6DAC472D-5D75-391F-B76E-FDE1B8F4C9BD}</Project>
+      <Name>event_static</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\evserver.vcxproj">
+      <Project>{BD757DBB-74F9-36E4-ADD9-8AAA1349C763}</Project>
+      <Name>evserver</Name>
     </ProjectReference>
     <ProjectReference Include="E:\github\cobweb\build\extern\glad\glad.vcxproj">
       <Project>{40ACB2C0-8C19-35EA-A2FF-9D7413443836}</Project>
@@ -171,6 +175,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{8D709496-CBFE-3229-B31C-F2EA9039A453}</Project>
       <Name>lev</Name>
     </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\protobuf\cmake\libprotobuf.vcxproj">
+      <Project>{3CD16C56-C08E-3DA8-8396-5AE56822CDBF}</Project>
+      <Name>libprotobuf</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\protobuf\cmake\libprotobuf-lite.vcxproj">
+      <Project>{9FF1B108-7919-3D55-BB43-5EB74A5D0E7B}</Project>
+      <Name>libprotobuf-lite</Name>
+    </ProjectReference>
     <ProjectReference Include="E:\github\cobweb\build\luaclib\lnetwork.vcxproj">
       <Project>{53C8D118-B388-359D-9D43-F6383F89A5B9}</Project>
       <Name>lnetwork</Name>
@@ -190,6 +202,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ProjectReference Include="E:\github\cobweb\build\extern\mylib\mylib.vcxproj">
       <Project>{49482D99-7AA1-3DA4-AEDE-34D1F5BAC198}</Project>
       <Name>mylib</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\extern\pb\pb.vcxproj">
+      <Project>{A671EAED-A569-32A0-B614-8C776466B02F}</Project>
+      <Name>pb</Name>
     </ProjectReference>
     <ProjectReference Include="E:\github\cobweb\build\extern\sajson\sajson.vcxproj">
       <Project>{4E8A61A9-0990-3E7E-94E3-3CD1A96C27D3}</Project>

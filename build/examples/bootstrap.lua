@@ -9,8 +9,12 @@ cobweb.start(function ()
     })
     cobweb.log(str)
     --cobweb.newservice("box2d")
-    cobweb.newservice("ev")
-   
+    --cobweb.newservice("ev")
+    --cobweb.newservice("pbtest")
+
+    
+    cobweb.newservice("adventure")
+
     --cobweb.newservice("tcpserver")
     --cobweb.launch("echoserver", address)
     --cobweb.newservice("recv")

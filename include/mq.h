@@ -12,7 +12,6 @@ struct Message {
 	size_t sz_;
 };
 
-
 class MQ {
 public:
 	std::mutex mutex_;

@@ -8,7 +8,13 @@ cobweb.start(function ()
         age = 10
     })
     cobweb.log(str)
-   
+    --cobweb.newservice("box2d")
+    --cobweb.newservice("ev")
+    --cobweb.newservice("pbtest")
+
+    
+    cobweb.newservice("adventure")
+
     --cobweb.newservice("tcpserver")
     --cobweb.launch("echoserver", address)
     --cobweb.newservice("recv")
@@ -19,5 +25,5 @@ cobweb.start(function ()
     -- end
     -- cobweb.timeout(100, f)
     
-    --cobweb.exit()
+    cobweb.exit()
 end)

@@ -29,8 +29,18 @@ target_link_libraries(${LUA_NETWORK_NAME} lua mylib)
 #target_link_libraries(${LUA_CRYPT_NAME} lua crypt)
 #target_link_libraries(${LUA_MYSQL_NAME} lua libmysql)
 target_link_libraries(${LUA_BOX2D_NAME} lua box2d mylib)
-target_link_libraries(${LUA_EVENT_NAME} lua mylib ws2_32 libevent libevent_core libevent_extras)
-#target_link_libraries(${LUA_UV_NAME} lua libuv ws2_32 Dbghelp Iphlpapi Userenv)
+
+
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+	target_link_libraries(${LUA_EVENT_NAME} lua mylib libevent libevent_core libevent_extra)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+	target_link_libraries(${LUA_EVENT_NAME} lua mylib ws2_32 event event_core event_extra)
+	#target_link_libraries(${LUA_UV_NAME} lua libuv ws2_32 Dbghelp Iphlpapi Userenv)
+else()
+	message("current Platform: unkonw")
+endif()
+
 
 
 

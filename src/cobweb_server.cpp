@@ -7,11 +7,11 @@ Version: 1.0
 Date: 2021.12.12
 History:
 ****************************************************/
-#include "cobweb.h"
 #include <map>
 #include <mutex>
 #include <cassert>
 #include <cstring>
+#include "context.h"
 #include "handle.h"
 #include "monitor.h"
 #include "platform.h"
@@ -37,6 +37,7 @@ struct ContextData {
 	uint32_t handle_;
 	int session_;
 	bool endless_;
+	bool dead_;
 	std::map<std::string, command_func> funcs_;
 };
 
@@ -72,6 +73,7 @@ ContextSystem::New(std::string name, std::string param) {
 	ctx->data_->session_ = 0;
 	ctx->data_->cb_ = nullptr;
 	ctx->data_->cb_ud_ = nullptr;
+	ctx->data_->dead_ = false;
 
 	ctx->data_->funcs_.insert({ "REG", ContextSystem::CMD_REG });
 	ctx->data_->funcs_.insert({ "QUERY", ContextSystem::CMD_QUERY });
@@ -113,6 +115,7 @@ void
 ContextSystem::Release(Context* ctx) {
 	assert(ctx->data_ != nullptr);
 	assert(ctx != nullptr);
+	ModuleSystem::InstanceRelease(ctx->data_->mod_, ctx->data_->instance_);
 	HandleSystem::Retire(ctx->data_->handle_);
 	delete ctx->data_;
 	delete ctx;
@@ -158,6 +161,10 @@ ContextSystem::LogError(uint32_t source, const char* format, ...) {
 void
 ContextSystem::DispatchMessage(Context* ctx, int mid) {
 	ContextData* ctx_data = ctx->data_;
+	if (ctx_data->dead_) {
+		ContextSystem::Release(ctx);
+		return;
+	}
 	if (ctx_data->cb_ == nullptr) {
 		return;
 	}
@@ -333,7 +340,7 @@ ContextSystem::CMD_SETENV(Context* ctx, std::string param) {
 
 std::string
 ContextSystem::CMD_EXIT(Context* ctx, std::string param) {
-	HandleSystem::Retire(ctx->get_handle(ctx));
+	ctx->data_->dead_ = true;
 	return "1";
 }
 
@@ -342,7 +349,7 @@ ContextSystem::CMD_KILL(Context* ctx, std::string param) {
 	uint32_t handle = std::stoi(param);
 	Context* kill_ctx = HandleSystem::FindContext(handle);
 	if (kill_ctx != nullptr) {
-		HandleSystem::Retire(kill_ctx->get_handle(kill_ctx));
+		kill_ctx->data_->dead_ = true;
 		return "1";
 	}
 	else {

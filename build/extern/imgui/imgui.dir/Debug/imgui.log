@@ -1,5 +1,4 @@
-﻿d:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VC\v170\Microsoft.CppClean.targets(77,5): warning : 文件“e:\github\cobweb\build\extern\imgui\debug\imgui.lib”正由另一进程使用，因此该进程无法访问此文件。
-  Building Custom Rule E:/github/cobweb/extern/imgui/CMakeLists.txt
+﻿  Building Custom Rule E:/github/cobweb/extern/imgui/CMakeLists.txt
   imgui.cpp
   imgui_demo.cpp
   imgui_draw.cpp
