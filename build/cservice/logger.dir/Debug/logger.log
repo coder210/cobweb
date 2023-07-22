@@ -1,4 +1,1 @@
-﻿  Building Custom Rule E:/github/cobweb/cservice/CMakeLists.txt
-  logger.cpp
-    正在创建库 E:/github/cobweb/build/cservice/Debug/logger.lib 和对象 E:/github/cobweb/build/cservice/Debug/logger.exp
-  logger.vcxproj -> E:\github\cobweb\build\cservice\Debug\logger.dll
+﻿  logger.vcxproj -> E:\github\cobweb\build\cservice\Debug\logger.dll

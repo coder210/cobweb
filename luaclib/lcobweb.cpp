@@ -978,6 +978,14 @@ ltointeger(lua_State* L) {
 	return 1;
 }
 
+static int
+lnow(lua_State* L) {
+	Context* ctx = (Context*)lua_touserdata(L, lua_upvalueindex(1));
+	int64_t ret = ctx->timestamp();
+	lua_pushinteger(L, ret);
+	return 1;
+}
+
 COBWEB_MOD_API int
 luaopen_lcobweb(lua_State* L) {
 	luaL_checkversion(L);
@@ -997,6 +1005,7 @@ luaopen_lcobweb(lua_State* L) {
 		{"tostring", ltostring},
 		{"trash", ltrash},
 		{"tointeger", ltointeger},
+		{"now", lnow},
 		{NULL, NULL}
 	};
 	luaL_newlibtable(L, l);

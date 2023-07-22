@@ -127,6 +127,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{86E5A2F5-BD9C-3A57-9175-7A8F80419605}</Project>
       <Name>echoserver</Name>
     </ProjectReference>
+    <ProjectReference Include="E:\github\cobweb\build\cservice\evclient.vcxproj">
+      <Project>{7ACB21B2-F674-3B41-B3D6-0FAE72AA4801}</Project>
+      <Name>evclient</Name>
+    </ProjectReference>
     <ProjectReference Include="E:\github\cobweb\build\extern\libevent\event_core_static.vcxproj">
       <Project>{BEF6F797-7B94-3BAA-B89F-A55B52F4A52F}</Project>
       <Name>event_core_static</Name>

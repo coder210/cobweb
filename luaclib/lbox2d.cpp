@@ -8,6 +8,53 @@ extern "C" {
 }
 
 
+class CustomContactListener : public b2ContactListener {
+public:
+	CustomContactListener(struct lua_State* l, int callback) {
+		this->gl_ = l;
+		this->callback_ = callback;
+	}
+private:
+	int callback_;
+	struct lua_State* gl_;
+private:
+	void BeginContact(b2Contact* contact) override {
+		lua_rawgeti(this->gl_, LUA_REGISTRYINDEX, this->callback_);
+		lua_pushstring(this->gl_, "begin_contact");
+		lua_pushlightuserdata(this->gl_, contact);
+		int r = lua_pcall(this->gl_, 2, 0, 0);
+		if (r != LUA_OK) {
+
+		}
+	}
+
+	void EndContact(b2Contact* contact) override {
+		lua_rawgeti(this->gl_, LUA_REGISTRYINDEX, this->callback_);
+		lua_pushstring(this->gl_, "end_contact");
+		lua_pushlightuserdata(this->gl_, contact);
+		int r = lua_pcall(this->gl_, 2, 0, 0);
+		if (r != LUA_OK) {
+
+		}
+	}
+
+	void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override {
+		lua_rawgeti(this->gl_, LUA_REGISTRYINDEX, this->callback_);
+		lua_pushstring(this->gl_, "pre_solve");
+		lua_pushlightuserdata(this->gl_, contact);
+		lua_pushlightuserdata(this->gl_, (void*)oldManifold);
+		lua_pcall(this->gl_, 3, 0, 0);
+	}
+
+	void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) override {
+		lua_rawgeti(this->gl_, LUA_REGISTRYINDEX, this->callback_);
+		lua_pushstring(this->gl_, "post_solve");
+		lua_pushlightuserdata(this->gl_, contact);
+		lua_pushlightuserdata(this->gl_, (void*)impulse);
+		lua_pcall(this->gl_, 3, 0, 0);
+	}
+};
+
 static int
 lcreate_world(struct lua_State* L) {
 	float g_x = (float)luaL_checknumber(L, 1);
@@ -30,6 +77,17 @@ lcreate_worldx(struct lua_State* L) {
 	lua_pushlightuserdata(L, world);
 	lua_pushinteger(L, ret);
 	return 2;
+}
+
+static int
+lworld_set_contact_listener(struct lua_State* L) {
+	b2World* world = (b2World*)lua_touserdata(L, 1);
+	luaL_checktype(L, 2, LUA_TFUNCTION);
+	int callback = luaL_ref(L, LUA_REGISTRYINDEX);
+	lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+	lua_State* gL = lua_tothread(L, -1);
+	world->SetContactListener(new CustomContactListener(gL, callback));
+	return 0;
 }
 
 static int
@@ -286,7 +344,7 @@ lcreate_box_fixture(struct lua_State* L) {
 	int groupIndex = (int)luaL_checkinteger(L, 4);
 	float density = (float)luaL_checknumber(L, 5);
 	float friction = (float)luaL_checknumber(L, 6);
-	float restitution = (float)luaL_checknumber(L, 7);	
+	float restitution = (float)luaL_checknumber(L, 7);
 	bool isSensor = lua_toboolean(L, 8);
 	int args_count = lua_gettop(L);
 	b2PolygonShape boxShape;
@@ -307,6 +365,8 @@ lcreate_box_fixture(struct lua_State* L) {
 	fixtureDef.friction = friction;
 	fixtureDef.restitution = restitution;
 	fixtureDef.isSensor = isSensor;
+	//fixtureDef.filter.categoryBits = 2;
+	//fixtureDef.filter.maskBits = 4;
 	body->CreateFixture(&fixtureDef);
 	return 0;
 }
@@ -443,12 +503,22 @@ lcreate_polygon_fixture(struct lua_State* L) {
 	return 0;
 }
 
+static int
+lcontact_get_bodies(struct lua_State* L) {
+	b2Contact* contact = (b2Contact*)lua_touserdata(L, 1);
+	b2Body* bodyA = contact->GetFixtureA()->GetBody();
+	b2Body* bodyB = contact->GetFixtureB()->GetBody();
+	lua_pushlightuserdata(L, bodyA);
+	lua_pushlightuserdata(L, bodyB);
+	return 2;
+}
 
 COBWEB_MOD_API int
 luaopen_lbox2d(lua_State* L) {
 	luaL_checkversion(L);
 	luaL_Reg l[] = {
 		{"create_world", lcreate_world},
+		{"world_set_contact_listener", lworld_set_contact_listener},
 		{"world_step", lworld_step},
 		{"destory_world", ldestory_world},
 		{"create_worldx", lcreate_worldx},
@@ -476,6 +546,7 @@ luaopen_lbox2d(lua_State* L) {
 		{"create_circle_fixture", lcreate_circle_fixture},
 		{"create_chain_fixture", lcreate_chain_fixture},
 		{"create_polygon_fixture", lcreate_polygon_fixture},
+		{"contact_get_bodies", lcontact_get_bodies},
 		{NULL, NULL}
 	};
 	luaL_newlib(L, l);

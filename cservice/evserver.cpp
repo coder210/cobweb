@@ -20,7 +20,7 @@ History:
 #include <ctype.h>
 #include <mutex>
 #include "context.h"
-#include "mylib/network.h"
+#include "mylib\network.h"
 
 #define MAX_BUFFER 1024
 #define EVSERVER_DISPATCH 10 
@@ -143,7 +143,7 @@ _accept_cb(struct evconnlistener* listener, evutil_socket_t clientfd,
 	int port = ntohs(addr_in->sin_port);
 	uint32_t source = inst->ctx_->get_handle(inst->ctx_);
 	SocketMessage socket_message;
-	socket_message.stype_ = SOCKET_TYPE_CONNECT;
+	socket_message.stype_ = SOCKET_TYPE_ACCEPT;
 	socket_message.data_ = bufev;
 	inst->ctx_->sendname(source, inst->dest_, PTYPE_SOCKET | PTYPE_TAG_USERDATA, 0, &socket_message, sizeof(socket_message));
 }

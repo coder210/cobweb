@@ -30,8 +30,7 @@ UtilsSystem::Timestamp(void) {
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> millis
 		= std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
 	time_t total_milliseconds = millis.time_since_epoch().count();
-	int64_t timestamp = total_milliseconds / 1000;
-	return timestamp;
+	return total_milliseconds;
 }
 
 std::string

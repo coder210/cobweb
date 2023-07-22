@@ -31,6 +31,7 @@ local cobweb = {
 }
 
 cobweb.tointeger = c.tointeger
+cobweb.now = c.now
 
 function cobweb.error(msg)
 	local currentlineInfo = debug.getinfo(2, "l")

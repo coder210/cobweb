@@ -1,4 +1,2 @@
-﻿  Building Custom Rule E:/github/cobweb/luaclib/CMakeLists.txt
-  lbox2d.cpp
-    正在创建库 E:/github/cobweb/build/luaclib/Debug/lbox2d.lib 和对象 E:/github/cobweb/build/luaclib/Debug/lbox2d.exp
+﻿  lbox2d.cpp
   lbox2d.vcxproj -> E:\github\cobweb\build\luaclib\Debug\lbox2d.dll
